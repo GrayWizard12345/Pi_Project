@@ -35,11 +35,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *@return Blurred and denoised image
  */
 cv::Mat LaneDetector::deNoise(cv::Mat inputImage) {
-  cv::Mat output;
+    cv::Mat output;
 
-  cv::GaussianBlur(inputImage, output, cv::Size(3, 3), 0, 0);
+    cv::GaussianBlur(inputImage, output, cv::Size(3, 3), 0, 0);
 
-  return output;
+    return output;
 }
 
 // EDGE DETECTION
@@ -49,28 +49,28 @@ cv::Mat LaneDetector::deNoise(cv::Mat inputImage) {
  *@return Binary image with only the edges represented in white
  */
 cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
-  cv::Mat output;
-  cv::Mat kernel;
-  cv::Point anchor;
+    cv::Mat output;
+    cv::Mat kernel;
+    cv::Point anchor;
 
-  // Convert image from RGB to gray
-  cv::cvtColor(img_noise, output, cv::COLOR_RGB2GRAY);
-  // Binarize gray image
-  //cv::threshold(output, output, 140, 255, cv::THRESH_BINARY);
+    // Convert image from RGB to gray
+    cv::cvtColor(img_noise, output, cv::COLOR_RGB2GRAY);
+    // Binarize gray image
+    //cv::threshold(output, output, 140, 255, cv::THRESH_BINARY);
 
-  // Create the kernel [-1 0 1]
-  // This kernel is based on the one found in the
-  // Lane Departure Warning System by Mathworks
-  int lowThreshold = 35;
-  int ratio = 3;
-  int kernel_size = 3;
-  
-   cv::blur(output, output, cv::Size(3,3) );
+    // Create the kernel [-1 0 1]
+    // This kernel is based on the one found in the
+    // Lane Departure Warning System by Mathworks
+    int lowThreshold = 35;
+    int ratio = 3;
+    int kernel_size = 3;
 
-  // Filter the binary image to obtain the edges
-  cv::Canny( output, output, lowThreshold, lowThreshold*ratio, kernel_size );
-  printf("\nEdge detector: %d -- %d", output.cols, output.rows);
-  return output;
+    cv::blur(output, output, cv::Size(3, 3));
+
+    // Filter the binary image to obtain the edges
+    cv::Canny(output, output, lowThreshold, lowThreshold * ratio, kernel_size);
+    printf("\nEdge detector: %d -- %d", output.cols, output.rows);
+    return output;
 }
 
 // MASK THE EDGE IMAGE
@@ -80,78 +80,81 @@ cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
  *@return Binary image with only the desired edges being represented
  */
 cv::Mat LaneDetector::mask(cv::Mat img_edges) {
-  cv::Mat output;
-  cv::Mat mask = cv::Mat::zeros(img_edges.size(), img_edges.type());
-  cv::Point pts[4] = {
-      cv::Point(0, 720),
-      cv::Point(0, 420),
-      cv::Point(1280, 420),
-      cv::Point(1280, 720)
-  };
+    cv::Mat output;
+    cv::Mat mask = cv::Mat::zeros(img_edges.size(), img_edges.type());
+    cv::Point pts[4] = {
+            cv::Point(0, 720),
+            cv::Point(0, 420),
+            cv::Point(1280, 420),
+            cv::Point(1280, 720)
+    };
 
-  // Create a binary polygon mask
-  cv::fillConvexPoly(mask, pts, 4, cv::Scalar(255, 0, 0));
-  // Multiply the edges image and the mask to get the output
-  cv::bitwise_and(img_edges, mask, output);
+    // Create a binary polygon mask
+    cv::fillConvexPoly(mask, pts, 4, cv::Scalar(255, 0, 0));
+    // Multiply the edges image and the mask to get the output
+    cv::bitwise_and(img_edges, mask, output);
 
-  return output;
+    return output;
 }
+
 cv::Mat LaneDetector::mask_right_buttom(cv::Mat img_edges) {
-  cv::Mat output;
-  /*cv::Mat mask = cv::Mat::zeros(img_edges.size(), img_edges.type());
-  cv::Point pts[4] = {
-      cv::Point(1280 / 4 * 3, 720),
-      cv::Point(1280 / 4 * 3, 420),
-      cv::Point(1280, 420),
-      cv::Point(1280, 720)
-  };
+    cv::Mat output;
+    /*cv::Mat mask = cv::Mat::zeros(img_edges.size(), img_edges.type());
+    cv::Point pts[4] = {
+        cv::Point(1280 / 4 * 3, 720),
+        cv::Point(1280 / 4 * 3, 420),
+        cv::Point(1280, 420),
+        cv::Point(1280, 720)
+    };
 
-  // Create a binary polygon mask
-  cv::fillConvexPoly(mask, pts, 4, cv::Scalar(255, 0, 0));
-  // Multiply the edges image and the mask to get the output
-  cv::bitwise_and(img_edges, mask, output);*/
-  cv::Rect rec(1280 / 4 * 3, 420, 1280 / 4, 720 - 420);
-  output = img_edges(rec);
+    // Create a binary polygon mask
+    cv::fillConvexPoly(mask, pts, 4, cv::Scalar(255, 0, 0));
+    // Multiply the edges image and the mask to get the output
+    cv::bitwise_and(img_edges, mask, output);*/
+    cv::Rect rec(1280 / 4 * 3, 420, 1280 / 4, 720 - 420);
+    output = img_edges(rec);
 
-  return output;
+    return output;
 }
+
 cv::Mat LaneDetector::mask_center_buttom(cv::Mat img_edges) {
-  cv::Mat output;
-  /*cv::Mat mask = cv::Mat::zeros(img_edges.size(), img_edges.type());
-  cv::Point pts[4] = {
-      cv::Point(1280 / 4, 720),
-      cv::Point(1280 / 4, 420),
-      cv::Point(1280 / 4 * 3, 420),
-      cv::Point(1280 / 4 * 3, 720)
-  };
+    cv::Mat output;
+    /*cv::Mat mask = cv::Mat::zeros(img_edges.size(), img_edges.type());
+    cv::Point pts[4] = {
+        cv::Point(1280 / 4, 720),
+        cv::Point(1280 / 4, 420),
+        cv::Point(1280 / 4 * 3, 420),
+        cv::Point(1280 / 4 * 3, 720)
+    };
 
-  // Create a binary polygon mask
-  cv::fillConvexPoly(mask, pts, 4, cv::Scalar(255, 0, 0));
-  // Multiply the edges image and the mask to get the output
-  cv::bitwise_and(img_edges, mask, output);
-*/
-  cv::Rect rec(1280 / 4, 420, 1280 / 2, 720 - 420);
-  output = img_edges(rec);
-  return output;
+    // Create a binary polygon mask
+    cv::fillConvexPoly(mask, pts, 4, cv::Scalar(255, 0, 0));
+    // Multiply the edges image and the mask to get the output
+    cv::bitwise_and(img_edges, mask, output);
+  */
+    cv::Rect rec(1280 / 4, 420, 1280 / 2, 720 - 420);
+    output = img_edges(rec);
+    return output;
 }
-cv::Mat LaneDetector::mask_left_buttom(cv::Mat img_edges) {
-  cv::Mat output;
- /* cv::Mat mask = cv::Mat::zeros(img_edges.size(), img_edges.type());
-  cv::Point pts[4] = {
-      cv::Point(0, 720),
-      cv::Point(0, 420),
-      cv::Point(1280 / 4, 420),
-      cv::Point(1280 / 4, 720)
-  };
 
-  // Create a binary polygon mask
-  cv::fillConvexPoly(mask, pts, 4, cv::Scalar(255, 0, 0));
-  // Multiply the edges image and the mask to get the output
-  cv::bitwise_and(img_edges, mask, output);
-*/
-  cv::Rect rec(0, 420, 1280 / 4, 720 - 420);
-  output = img_edges(rec);
-  return output;
+cv::Mat LaneDetector::mask_left_buttom(cv::Mat img_edges) {
+    cv::Mat output;
+    /* cv::Mat mask = cv::Mat::zeros(img_edges.size(), img_edges.type());
+     cv::Point pts[4] = {
+         cv::Point(0, 720),
+         cv::Point(0, 420),
+         cv::Point(1280 / 4, 420),
+         cv::Point(1280 / 4, 720)
+     };
+
+     // Create a binary polygon mask
+     cv::fillConvexPoly(mask, pts, 4, cv::Scalar(255, 0, 0));
+     // Multiply the edges image and the mask to get the output
+     cv::bitwise_and(img_edges, mask, output);
+   */
+    cv::Rect rec(0, 420, 1280 / 4, 720 - 420);
+    output = img_edges(rec);
+    return output;
 }
 
 // HOUGH LINES
@@ -161,12 +164,12 @@ cv::Mat LaneDetector::mask_left_buttom(cv::Mat img_edges) {
  *@return Vector that contains all the detected lines in the image
  */
 std::vector<cv::Vec4i> LaneDetector::houghLines(cv::Mat img_mask) {
-  std::vector<cv::Vec4i> line;
+    std::vector<cv::Vec4i> line;
 
-  // rho and theta are selected by trial and error
-  HoughLinesP(img_mask, line, 1, CV_PI/180, 20, 20, 30);
+    // rho and theta are selected by trial and error
+    HoughLinesP(img_mask, line, 1, CV_PI / 180, 20, 20, 30);
 
-  return line;
+    return line;
 }
 
 // SORT RIGHT AND LEFT LINES
@@ -179,52 +182,53 @@ std::vector<cv::Vec4i> LaneDetector::houghLines(cv::Mat img_mask) {
  *@return The output is a vector(2) that contains all the classified lines
  */
 std::vector<std::vector<cv::Vec4i> > LaneDetector::lineSeparation(std::vector<cv::Vec4i> lines, cv::Mat img_edges) {
-  std::vector<std::vector<cv::Vec4i> > output(2);
-  size_t j = 0;
-  cv::Point ini;
-  cv::Point fini;
-  double slope_thresh = 0.3;
-  std::vector<double> slopes;
-  std::vector<cv::Vec4i> selected_lines;
-  std::vector<cv::Vec4i> right_lines, left_lines;
+    std::vector<std::vector<cv::Vec4i> > output(2);
+    size_t j = 0;
+    cv::Point ini;
+    cv::Point fini;
+    double slope_thresh = 0.3;
+    std::vector<double> slopes;
+    std::vector<cv::Vec4i> selected_lines;
+    std::vector<cv::Vec4i> right_lines, left_lines;
 
-  // Calculate the slope of all the detected lines
-  for (auto i : lines) {
-    ini = cv::Point(i[0], i[1]);
-    fini = cv::Point(i[2], i[3]);
+    // Calculate the slope of all the detected lines
+    for (auto i : lines) {
+        ini = cv::Point(i[0], i[1]);
+        fini = cv::Point(i[2], i[3]);
 
-    // Basic algebra: slope = (y1 - y0)/(x1 - x0)
-    double slope = (static_cast<double>(fini.y) - static_cast<double>(ini.y))/(static_cast<double>(fini.x) - static_cast<double>(ini.x) + 0.00001);
+        // Basic algebra: slope = (y1 - y0)/(x1 - x0)
+        double slope = (static_cast<double>(fini.y) - static_cast<double>(ini.y)) /
+                       (static_cast<double>(fini.x) - static_cast<double>(ini.x) + 0.00001);
 
-    // If the slope is too horizontal, discard the line
-    // If not, save them  and their respective slope
-    if (std::abs(slope) > slope_thresh) {
-      slopes.push_back(slope);
-      selected_lines.push_back(i);
+        // If the slope is too horizontal, discard the line
+        // If not, save them  and their respective slope
+        if (std::abs(slope) > slope_thresh) {
+            slopes.push_back(slope);
+            selected_lines.push_back(i);
+        }
     }
-  }
 
-  // Split the lines into right and left lines
-  img_center = static_cast<double>((img_edges.cols / 2));
-  while (j < selected_lines.size()) {
-    ini = cv::Point(selected_lines[j][0], selected_lines[j][1]);
-    fini = cv::Point(selected_lines[j][2], selected_lines[j][3]);
+    // Split the lines into right and left lines
+    img_center = static_cast<double>((img_edges.cols / 2));
+    while (j < selected_lines.size()) {
+        ini = cv::Point(selected_lines[j][0], selected_lines[j][1]);
+        fini = cv::Point(selected_lines[j][2], selected_lines[j][3]);
 
-    // Condition to classify line as left side or right side
-    if (slopes[j] > 0 && fini.x > img_center && ini.x > img_center) {
-      right_lines.push_back(selected_lines[j]);
-      right_flag = true;
-    } else if (slopes[j] < 0 && fini.x < img_center && ini.x < img_center) {
-        left_lines.push_back(selected_lines[j]);
-        left_flag = true;
+        // Condition to classify line as left side or right side
+        if (slopes[j] > 0 && fini.x > img_center && ini.x > img_center) {
+            right_lines.push_back(selected_lines[j]);
+            right_flag = true;
+        } else if (slopes[j] < 0 && fini.x < img_center && ini.x < img_center) {
+            left_lines.push_back(selected_lines[j]);
+            left_flag = true;
+        }
+        j++;
     }
-    j++;
-  }
 
-  output[0] = right_lines;
-  output[1] = left_lines;
+    output[0] = right_lines;
+    output[1] = left_lines;
 
-  return output;
+    return output;
 }
 
 // REGRESSION FOR LEFT AND RIGHT LINES
@@ -235,70 +239,71 @@ std::vector<std::vector<cv::Vec4i> > LaneDetector::lineSeparation(std::vector<cv
  *@param inputImage is used to select where do the lines will end
  *@return output contains the initial and final points of both lane boundary lines
  */
-std::vector<cv::Point> LaneDetector::regression(std::vector<std::vector<cv::Vec4i> > left_right_lines, cv::Mat inputImage) {
-  std::vector<cv::Point> output(4);
-  cv::Point ini;
-  cv::Point fini;
-  cv::Point ini2;
-  cv::Point fini2;
-  cv::Vec4d right_line;
-  cv::Vec4d left_line;
-  std::vector<cv::Point> right_pts;
-  std::vector<cv::Point> left_pts;
+std::vector<cv::Point>
+LaneDetector::regression(std::vector<std::vector<cv::Vec4i> > left_right_lines, cv::Mat inputImage) {
+    std::vector<cv::Point> output(4);
+    cv::Point ini;
+    cv::Point fini;
+    cv::Point ini2;
+    cv::Point fini2;
+    cv::Vec4d right_line;
+    cv::Vec4d left_line;
+    std::vector<cv::Point> right_pts;
+    std::vector<cv::Point> left_pts;
 
-  // If right lines are being detected, fit a line using all the init and final points of the lines
-  if (right_flag == true) {
-    for (auto i : left_right_lines[0]) {
-      ini = cv::Point(i[0], i[1]);
-      fini = cv::Point(i[2], i[3]);
+    // If right lines are being detected, fit a line using all the init and final points of the lines
+    if (right_flag == true) {
+        for (auto i : left_right_lines[0]) {
+            ini = cv::Point(i[0], i[1]);
+            fini = cv::Point(i[2], i[3]);
 
-      right_pts.push_back(ini);
-      right_pts.push_back(fini);
+            right_pts.push_back(ini);
+            right_pts.push_back(fini);
+        }
+
+        if (right_pts.size() > 0) {
+            // The right line is formed here
+            cv::fitLine(right_pts, right_line, CV_DIST_L2, 0, 0.01, 0.01);
+            right_m = right_line[1] / right_line[0];
+            right_b = cv::Point(right_line[2], right_line[3]);
+        }
     }
 
-    if (right_pts.size() > 0) {
-      // The right line is formed here
-      cv::fitLine(right_pts, right_line, CV_DIST_L2, 0, 0.01, 0.01);
-      right_m = right_line[1] / right_line[0];
-      right_b = cv::Point(right_line[2], right_line[3]);
+    // If left lines are being detected, fit a line using all the init and final points of the lines
+    if (left_flag == true) {
+        for (auto j : left_right_lines[1]) {
+            ini2 = cv::Point(j[0], j[1]);
+            fini2 = cv::Point(j[2], j[3]);
+
+            left_pts.push_back(ini2);
+            left_pts.push_back(fini2);
+        }
+
+        if (left_pts.size() > 0) {
+            // The left line is formed here
+            cv::fitLine(left_pts, left_line, CV_DIST_L2, 0, 0.01, 0.01);
+            left_m = left_line[1] / left_line[0];
+            left_b = cv::Point(left_line[2], left_line[3]);
+        }
     }
-  }
 
-  // If left lines are being detected, fit a line using all the init and final points of the lines
-  if (left_flag == true) {
-    for (auto j : left_right_lines[1]) {
-      ini2 = cv::Point(j[0], j[1]);
-      fini2 = cv::Point(j[2], j[3]);
+    // One the slope and offset points have been obtained, apply the line equation to obtain the line points
+    int ini_y = inputImage.rows;
+    //int fin_y = 470;
+    int fin_y = inputImage.cols;
 
-      left_pts.push_back(ini2);
-      left_pts.push_back(fini2);
-    }
+    double right_ini_x = ((ini_y - right_b.y) / right_m) + right_b.x;
+    double right_fin_x = ((fin_y - right_b.y) / right_m) + right_b.x;
 
-    if (left_pts.size() > 0) {
-      // The left line is formed here
-      cv::fitLine(left_pts, left_line, CV_DIST_L2, 0, 0.01, 0.01);
-      left_m = left_line[1] / left_line[0];
-      left_b = cv::Point(left_line[2], left_line[3]);
-    }
-  }
+    double left_ini_x = ((ini_y - left_b.y) / left_m) + left_b.x;
+    double left_fin_x = ((fin_y - left_b.y) / left_m) + left_b.x;
 
-  // One the slope and offset points have been obtained, apply the line equation to obtain the line points
-  int ini_y = inputImage.rows;
-  //int fin_y = 470;
-  int fin_y = inputImage.cols;
+    output[0] = cv::Point(right_ini_x, ini_y);
+    output[1] = cv::Point(right_fin_x, fin_y);
+    output[2] = cv::Point(left_ini_x, ini_y);
+    output[3] = cv::Point(left_fin_x, fin_y);
 
-  double right_ini_x = ((ini_y - right_b.y) / right_m) + right_b.x;
-  double right_fin_x = ((fin_y - right_b.y) / right_m) + right_b.x;
-
-  double left_ini_x = ((ini_y - left_b.y) / left_m) + left_b.x;
-  double left_fin_x = ((fin_y - left_b.y) / left_m) + left_b.x;
-
-  output[0] = cv::Point(right_ini_x, ini_y);
-  output[1] = cv::Point(right_fin_x, fin_y);
-  output[2] = cv::Point(left_ini_x, ini_y);
-  output[3] = cv::Point(left_fin_x, fin_y);
-
-  return output;
+    return output;
 }
 
 // TURN PREDICTION
@@ -308,41 +313,43 @@ std::vector<cv::Point> LaneDetector::regression(std::vector<std::vector<cv::Vec4
  *@return String that says if there is left or right turn or if the road is straight
  */
 int LaneDetector::predictTurn(int &output) {
-  //int output = INVALID;
-  double vanish_x;
-  double thr_vp = 30;
+    //int output = INVALID;
+    double vanish_x;
+    double thr_vp = 30;
 
-  // The vanishing point is the point where both lane boundary lines intersect
-  vanish_x = static_cast<double>(((right_m*right_b.x) - (left_m*left_b.x) - right_b.y + left_b.y) / (right_m - left_m));
+    // The vanishing point is the point where both lane boundary lines intersect
+    vanish_x = static_cast<double>(((right_m * right_b.x) - (left_m * left_b.x) - right_b.y + left_b.y) /
+                                   (right_m - left_m));
 
-  // The vanishing points location determines where is the road turning
-  if (vanish_x < (img_center - thr_vp))
-    output = Turn::LEFT;
-  else if (vanish_x > (img_center + thr_vp))
-    output = Turn::RIGHT;
-  else if (vanish_x >= (img_center - thr_vp) && vanish_x <= (img_center + thr_vp))
-    output = Turn::STRAIGHT;
-  //printf("\nTurn in predict turn %d", output);
-  return output;
+    // The vanishing points location determines where is the road turning
+    if (vanish_x < (img_center - thr_vp))
+        output = Turn::LEFT;
+    else if (vanish_x > (img_center + thr_vp))
+        output = Turn::RIGHT;
+    else if (vanish_x >= (img_center - thr_vp) && vanish_x <= (img_center + thr_vp))
+        output = Turn::STRAIGHT;
+    //printf("\nTurn in predict turn %d", output);
+    return output;
 }
 
 int LaneDetector::predictTurn_center_buttom_frame(int &output) {
-  //int output = INVALID;
-  double vanish_x;
-  double thr_vp = 75;
+    //int output = INVALID;
+    double vanish_x;
+    double thr_vp = 75;
 
-  // The vanishing point is the point where both lane boundary lines intersect
-  vanish_x = static_cast<double>(((right_m*right_b.x) - (left_m*left_b.x) - right_b.y + left_b.y) / (right_m - left_m));
+    // The vanishing point is the point where both lane boundary lines intersect
+    vanish_x = static_cast<double>(((right_m * right_b.x) - (left_m * left_b.x) - right_b.y + left_b.y) /
+                                   (right_m - left_m));
 
-  // The vanishing points location determines where is the road turning
-  if (vanish_x < (img_center - thr_vp))
-    output = Turn::LEFT;
-  else if (vanish_x > (img_center + thr_vp))
-    output = Turn::RIGHT;
-  else if (vanish_x >= (img_center - thr_vp) && vanish_x <= (img_center + thr_vp))
-    output = Turn::STRAIGHT;
-  //printf("\nTurn in predict turn %d", output);
-  return output;
+    // The vanishing points location determines where is the road turning
+    if (vanish_x < (img_center - thr_vp))
+        output = Turn::LEFT;
+    else if (vanish_x > (img_center + thr_vp))
+        output = Turn::RIGHT;
+    else if (vanish_x >= (img_center - thr_vp) && vanish_x <= (img_center + thr_vp))
+        output = Turn::STRAIGHT;
+    //printf("\nTurn in predict turn %d", output);
+    return output;
 }
 
 // PLOT RESULTS
@@ -354,27 +361,27 @@ int LaneDetector::predictTurn_center_buttom_frame(int &output) {
  *@return The function returns a 0
  */
 int LaneDetector::plotLane(cv::Mat inputImage, std::vector<cv::Point> lane, std::string turn) {
-  std::vector<cv::Point> poly_points;
-  cv::Mat output;
+    std::vector<cv::Point> poly_points;
+    cv::Mat output;
 
-  // Create the transparent polygon for a better visualization of the lane
-  inputImage.copyTo(output);
-  poly_points.push_back(lane[2]);
-  poly_points.push_back(lane[0]);
-  poly_points.push_back(lane[1]);
-  poly_points.push_back(lane[3]);
-  cv::fillConvexPoly(output, poly_points, cv::Scalar(0, 0, 255), CV_AA, 0);
-  cv::addWeighted(output, 0.3, inputImage, 1.0 - 0.3, 0, inputImage);
+    // Create the transparent polygon for a better visualization of the lane
+    inputImage.copyTo(output);
+    poly_points.push_back(lane[2]);
+    poly_points.push_back(lane[0]);
+    poly_points.push_back(lane[1]);
+    poly_points.push_back(lane[3]);
+    cv::fillConvexPoly(output, poly_points, cv::Scalar(0, 0, 255), CV_AA, 0);
+    cv::addWeighted(output, 0.3, inputImage, 1.0 - 0.3, 0, inputImage);
 
-  // Plot both lines of the lane boundary
-  cv::line(inputImage, lane[0], lane[1], cv::Scalar(0, 255, 255), 5, CV_AA);
-  cv::line(inputImage, lane[2], lane[3], cv::Scalar(0, 255, 255), 5, CV_AA);
+    // Plot both lines of the lane boundary
+    cv::line(inputImage, lane[0], lane[1], cv::Scalar(0, 255, 255), 5, CV_AA);
+    cv::line(inputImage, lane[2], lane[3], cv::Scalar(0, 255, 255), 5, CV_AA);
 
-  // Plot the turn message
-  cv::putText(inputImage, turn, cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+    // Plot the turn message
+    cv::putText(inputImage, turn, cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
 
-  // Show the final output image
-  cv::namedWindow("Lane", CV_WINDOW_AUTOSIZE);
-  cv::imshow("Lane", inputImage);
-  return 0;
+    // Show the final output image
+    cv::namedWindow("Lane", CV_WINDOW_AUTOSIZE);
+    cv::imshow("Lane", inputImage);
+    return 0;
 }

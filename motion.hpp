@@ -22,7 +22,7 @@
 
 #include<wiringPi.h>
 #include<softPwm.h>
- 
+
 // pin connections for DC motor
 // left DC motors
 #define IN1_PIN 1
@@ -42,16 +42,24 @@
 
 // DC motor direction switch functions
 void initDCMotor();
+
 void goForward();
+
 void goBackward();
+
 void goLeft();
+
 void goRight();
+
 void stopDCMotor();
 
 // Functions for pwm generation for DC motors
 void pwmInitDCMotor();
+
 void pwmGo(int gSpeed);
+
 void pwmStop();
+
 void pwmGoBack(int gSpeed);
 
 
@@ -59,9 +67,11 @@ void pwmGoBack(int gSpeed);
 void pwm_right_smooth_turn(int speed, int ratio);
 
 void pwm_left_smooth_turn(int speed, int ratio);
+
 void pwm_left_point_turn(int speed);
 
 void pwm_right_point_turn(int speed);
+
 void turn_left_by_slope(int speed, double slope);
 
 void turn_right_by_slope(int speed, double slope);
