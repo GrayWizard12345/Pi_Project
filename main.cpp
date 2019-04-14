@@ -23,7 +23,7 @@ static int left_buttom_turn_predictor;
 static int right_buttom_turn_predictor;
 static int center_buttom_turn_predictor;
 
-char *turnAsString[] = {"RIGHT", "LEFT", "STRAIGHT"};
+char *turnAsString[] = {const_cast<char *>("LEFT"), const_cast<char *>("STRAIGHT"), const_cast<char *>("RIGHT")};
 int speed;
 int ratio_;
 
@@ -90,7 +90,7 @@ void *video_loop(void *) {
 
     int width = src.size().width;
     int height = src.size().height;
-    video = new VideoWriter("outcpp.avi", CV_FOURCC('M', 'J', 'P', 'G'), 10, Size(width, height));
+    //video = new VideoWriter("outcpp.avi", CV_FOURCC('M', 'J', 'P', 'G'), 10, Size(width, height));
     //video_mask = new VideoWriter("mask.avi",CV_FOURCC('M','J','P','G'),10, Size(img_mask.size().width, img_mask.size().height));
     //video_edge = new VideoWriter("edge.avi",CV_FOURCC('M','J','P','G'),10, Size(img_edges.size().width,img_edges.size().height));
     while (1) {
@@ -98,31 +98,32 @@ void *video_loop(void *) {
         capture.grab(); //grab the scene using raspicam
         capture.retrieve(src); // retrieve the captured scene as an image and store it in matrix container
 
-        //img_denoise = lanedetector.deNoise(src);
+        img_denoise = lanedetector.deNoise(src);
 
-//        img_edges = lanedetector.edgeDetector(src);
-//
-//        // Mask the image so that we only get the ROI
-//        img_mask = lanedetector.mask(img_edges);
-//
-//        // Obtain Hough lines in the cropped image
-//        lines = lanedetector.houghLines(img_mask);
-//
-//        if (!lines.empty()) {
-//            // Separate lines into left and right lines
-//            left_right_lines = lanedetector.lineSeparation(lines, img_edges);
-//
-//            // Apply regression to obtain only one line for each side of the lane
-//            lane = lanedetector.regression(left_right_lines, src);
-//
-//            // Predict the turn by determining the vanishing point of the the lines
-//            lanedetector.predictTurn(turn);
-//            printf("\nTurn %s", turnAsString[turn]);
-//            // Plot lane detection
-//            //flag_plot = lanedetector.plotLane(src, lane, turnAsString[turn] + to_string(lanedetector.right_m));
-//
-//
-//        }
+        img_edges = lanedetector.edgeDetector(src);
+/*
+        // Mask the image so that we only get the ROI
+        img_mask = lanedetector.mask(img_edges);
+
+        // Obtain Hough lines in the cropped image
+        lines = lanedetector.houghLines(img_mask);
+
+        if (!lines.empty()) {
+            // Separate lines into left and right lines
+            left_right_lines = lanedetector.lineSeparation(lines, img_edges);
+
+            // Apply regression to obtain only one line for each side of the lane
+            lane = lanedetector.regression(left_right_lines, src);
+
+            // Predict the turn by determining the vanishing point of the the lines
+            lanedetector.predictTurn(turn);
+            printf("\nTurn %s", turnAsString[turn]);
+            // Plot lane detection
+            //flag_plot = lanedetector.plotLane(src, lane, turnAsString[turn] + to_string(lanedetector.right_m));
+
+
+        }
+*/
 
         //LEFT BUTTOM FRAME HERE
         img_left_buttom_mask = lanedetector.mask_left_buttom(img_edges);
@@ -137,9 +138,31 @@ void *video_loop(void *) {
 
             // Predict the turn by determining the vanishing point of the the lines
             lanedetector.predictTurn(left_buttom_turn_predictor);
-            printf("\nleft_buttom_turn_predictor %s", turnAsString[left_buttom_turn_predictor]);
+            printf("\n%s", turnAsString[left_buttom_turn_predictor]);
             // Plot lane detection
-            lanedetector.plotLane(img_left_buttom_mask, lane_left_buttom_frame, turnAsString[left_buttom_turn_predictor]);
+            //lanedetector.plotLane(img_left_buttom_mask, lane_left_buttom_frame, turnAsString[left_buttom_turn_predictor]);
+
+
+        }
+
+        //CENTER BUTTOM FRAME HERE
+        img_center_buttom_mask = lanedetector.mask_center_buttom(img_edges);
+        center_buttom_lines = lanedetector.houghLines(img_center_buttom_mask);
+
+        if (!center_buttom_lines.empty()) {
+            // Separate lines into left and right lines
+            left_right_lines_center_buttom_frame = lanedetector.lineSeparation(center_buttom_lines,
+                                                                               img_center_buttom_mask);
+
+            // Apply regression to obtain only one line for each side of the lane
+            lane_center_buttom_frame = lanedetector.regression(left_right_lines_center_buttom_frame,
+                                                               img_center_buttom_mask);
+
+            // Predict the turn by determining the vanishing point of the the lines
+            lanedetector.predictTurn_center_bottom_frame(center_buttom_turn_predictor);
+            printf(" - %s", turnAsString[center_buttom_turn_predictor]);
+            // Plot lane detection
+            //lanedetector.plotLane(img_center_buttom_mask, lane_center_buttom_frame, turnAsString[turn]);
 
 
         }
@@ -159,41 +182,21 @@ void *video_loop(void *) {
 
             // Predict the turn by determining the vanishing point of the the lines
             lanedetector.predictTurn(right_buttom_turn_predictor);
-            printf("\nright_buttom_turn_predictor %s", turnAsString[right_buttom_turn_predictor]);
+            printf(" - %s", turnAsString[right_buttom_turn_predictor]);
             // Plot lane detection
-            lanedetector.plotLane(img_right_buttom_mask, lane_right_buttom_frame, turnAsString[turn]);
-
-
-        }
-        //CENTER BUTTOM FRAME HERE
-        img_center_buttom_mask = lanedetector.mask_center_buttom(img_edges);
-        center_buttom_lines = lanedetector.houghLines(img_center_buttom_mask);
-
-        if (!center_buttom_lines.empty()) {
-            // Separate lines into left and right lines
-            left_right_lines_center_buttom_frame = lanedetector.lineSeparation(center_buttom_lines,
-                                                                               img_center_buttom_mask);
-
-            // Apply regression to obtain only one line for each side of the lane
-            lane_center_buttom_frame = lanedetector.regression(left_right_lines_center_buttom_frame,
-                                                               img_center_buttom_mask);
-
-            // Predict the turn by determining the vanishing point of the the lines
-            lanedetector.predictTurn_center_buttom_frame(turn);
-            printf("\ncenter_buttom_turn_predictor %s", turnAsString[center_buttom_turn_predictor]);
-            // Plot lane detection
-            lanedetector.plotLane(img_center_buttom_mask, lane_center_buttom_frame, turnAsString[turn]);
+            //lanedetector.plotLane(img_right_buttom_mask, lane_right_buttom_frame, turnAsString[turn]);
 
 
         }
 
         //video_mask->write(img_mask);
-        video->write(src);
+        //video->write(src);
         //video_edge->write(img_edges);
         //imshow("Video", img_mask);
         imshow("LEFT_BUTTOM", img_left_buttom_mask);
         imshow("RIGHT_BUTTOM", img_right_buttom_mask);
         imshow("CENTER_BUTTOM", img_center_buttom_mask);
+        printf("\n%s", turnAsString[turn = (center_buttom_turn_predictor + left_buttom_turn_predictor + right_buttom_turn_predictor)/3]);
         //namedWindow("Hello world");
         cvWaitKey(100);
         pthread_mutex_unlock(&frame_mutex);
@@ -212,9 +215,11 @@ int main(int argc, char **argv) {
 
     speed = 60;
     ratio_ = 3;
+    int del;
     if (argc > 1) {
         speed = atoi(argv[1]);
         ratio_ = atoi(argv[2]);
+        del = atoi(argv[3]);
     }
     printf("Speed %d ", speed);
     if (wiringPiSetup() == -1)
@@ -235,7 +240,7 @@ int main(int argc, char **argv) {
     while (1) {
         //pthread_mutex_lock(&frame_mutex);
         pthread_mutex_lock(&motor_mutex);
-        int del;
+        //int del;
         double temp;
         double temp2;
         if (turn == STRAIGHT) {
@@ -244,21 +249,23 @@ int main(int argc, char **argv) {
         }
         if (turn == LEFT) {
             temp = abs(lanedetector.right_m);
-            del = 20 * temp;
+            //del = 20 * temp;
             pwm_left_smooth_turn(speed, ratio_);
+            pthread_mutex_unlock(&motor_mutex);
             delay(del);
         }
         if (turn == RIGHT) {
             temp2 = abs(lanedetector.left_m);
-            del = 20 * temp;
+            //del = 20 * temp2;
             pwm_right_smooth_turn(speed, ratio_);
+            pthread_mutex_unlock(&motor_mutex);
             delay(del);
         }
         //printf("\nLeft: %lf\nRight : %lf", temp, temp2);
         pthread_mutex_unlock(&motor_mutex);
         //pthread_mutex_unlock(&frame_mutex);
         delay(10);
-        pwmStop();
+        //pwmStop();
 
     }
 

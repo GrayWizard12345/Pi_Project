@@ -69,7 +69,7 @@ cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
 
     // Filter the binary image to obtain the edges
     cv::Canny(output, output, lowThreshold, lowThreshold * ratio, kernel_size);
-    printf("\nEdge detector: %d -- %d", output.cols, output.rows);
+    //printf("\nEdge detector: %d -- %d", output.cols, output.rows);
     return output;
 }
 
@@ -83,10 +83,10 @@ cv::Mat LaneDetector::mask(cv::Mat img_edges) {
     cv::Mat output;
     cv::Mat mask = cv::Mat::zeros(img_edges.size(), img_edges.type());
     cv::Point pts[4] = {
-            cv::Point(0, 720),
+            cv::Point(0, 960),
             cv::Point(0, 420),
             cv::Point(1280, 420),
-            cv::Point(1280, 720)
+            cv::Point(1280, 960)
     };
 
     // Create a binary polygon mask
@@ -111,7 +111,7 @@ cv::Mat LaneDetector::mask_right_buttom(cv::Mat img_edges) {
     cv::fillConvexPoly(mask, pts, 4, cv::Scalar(255, 0, 0));
     // Multiply the edges image and the mask to get the output
     cv::bitwise_and(img_edges, mask, output);*/
-    cv::Rect rec(1280 / 4 * 3, 420, 1280 / 4, 720 - 420);
+    cv::Rect rec(1280 / 4 * 3, 420, 1280 / 4, 960 - 420);
     output = img_edges(rec);
 
     return output;
@@ -132,7 +132,7 @@ cv::Mat LaneDetector::mask_center_buttom(cv::Mat img_edges) {
     // Multiply the edges image and the mask to get the output
     cv::bitwise_and(img_edges, mask, output);
   */
-    cv::Rect rec(1280 / 4, 420, 1280 / 2, 720 - 420);
+    cv::Rect rec(1280 / 4, 420, 1280 / 2, 960 - 420);
     output = img_edges(rec);
     return output;
 }
@@ -152,7 +152,7 @@ cv::Mat LaneDetector::mask_left_buttom(cv::Mat img_edges) {
      // Multiply the edges image and the mask to get the output
      cv::bitwise_and(img_edges, mask, output);
    */
-    cv::Rect rec(0, 420, 1280 / 4, 720 - 420);
+    cv::Rect rec(0, 420, 1280 / 4, 960 - 420);
     output = img_edges(rec);
     return output;
 }
@@ -186,7 +186,7 @@ std::vector<std::vector<cv::Vec4i> > LaneDetector::lineSeparation(std::vector<cv
     size_t j = 0;
     cv::Point ini;
     cv::Point fini;
-    double slope_thresh = 0.3;
+    double slope_thresh = 0.17;     //TODO changed from 0.3
     std::vector<double> slopes;
     std::vector<cv::Vec4i> selected_lines;
     std::vector<cv::Vec4i> right_lines, left_lines;
@@ -315,7 +315,7 @@ LaneDetector::regression(std::vector<std::vector<cv::Vec4i> > left_right_lines, 
 int LaneDetector::predictTurn(int &output) {
     //int output = INVALID;
     double vanish_x;
-    double thr_vp = 30;
+    double thr_vp = 7;
 
     // The vanishing point is the point where both lane boundary lines intersect
     vanish_x = static_cast<double>(((right_m * right_b.x) - (left_m * left_b.x) - right_b.y + left_b.y) /
@@ -332,10 +332,10 @@ int LaneDetector::predictTurn(int &output) {
     return output;
 }
 
-int LaneDetector::predictTurn_center_buttom_frame(int &output) {
+int LaneDetector::predictTurn_center_bottom_frame(int &output) {
     //int output = INVALID;
     double vanish_x;
-    double thr_vp = 75;
+    double thr_vp = 13;
 
     // The vanishing point is the point where both lane boundary lines intersect
     vanish_x = static_cast<double>(((right_m * right_b.x) - (left_m * left_b.x) - right_b.y + left_b.y) /

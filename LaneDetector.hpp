@@ -32,9 +32,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 enum Turn {
     INVALID = -1,
-    RIGHT,
     LEFT,
-    STRAIGHT
+    STRAIGHT,
+    RIGHT
 };
 
 /**
@@ -74,5 +74,5 @@ public:
 
     cv::Mat mask_center_buttom(cv::Mat img_edges);
 
-    int predictTurn_center_buttom_frame(int &output);
+    int predictTurn_center_bottom_frame(int &output);
 };
