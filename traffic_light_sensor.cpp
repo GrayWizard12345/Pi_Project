@@ -89,12 +89,12 @@ int initTrafficLightThread() {
 
 void trafficLightHandler(int signum) {
     printf("red traffic light interrupt called\n");
-    pthread_mutex_lock(&motor_mutex);
+    pthread_mutex_lock(&trafficLightMutex);
     pwmStop();
     delay(10000);
     //TODO change the default delay
     //while (circleCount != 0);
-    pthread_mutex_unlock(&motor_mutex);
+    pthread_mutex_unlock(&trafficLightMutex);
 }
 
 void initTrafficLightSignal() {
@@ -125,10 +125,10 @@ int main() {
     pwmInitDCMotor();
 
     while (1) {
-        pthread_mutex_lock(&motor_mutex);
+        pthread_mutex_lock(&trafficLightMutex);
         pwmGo(40);
         delay(10);
-        pthread_mutex_unlock(&motor_mutex);
+        pthread_mutex_unlock(&trafficLightMutex);
     }
 
     return 0;
