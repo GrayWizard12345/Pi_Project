@@ -385,3 +385,41 @@ int LaneDetector::plotLane(cv::Mat inputImage, std::vector<cv::Point> lane, std:
     cv::imshow("Lane", inputImage);
     return 0;
 }
+
+bool LaneDetector::look_for_cross_walk(std::vector<cv::Vec4i> houghLines, cv::Mat &src){
+    cv::Point ini;
+    cv::Point fini;
+    double slope_thresh = 1;     //TODO changed from 0.3
+    std::vector<double> slopes;
+    std::vector<cv::Vec4i> selected_lines;
+    std::vector<cv::Point> poly_points;
+    int c = 0;
+    // Calculate the slope of all the detected lines
+    for (auto i : houghLines) {
+        ini = cv::Point(i[0], i[1]);
+        fini = cv::Point(i[2], i[3]);
+
+        // Basic algebra: slope = (y1 - y0)/(x1 - x0)
+        double slope = (static_cast<double>(fini.y) - static_cast<double>(ini.y)) /
+                       (static_cast<double>(fini.x) - static_cast<double>(ini.x) + 0.00001);
+
+        // If the slope is too horizontal, discard the line
+        // If not, save them  and their respective slope
+
+        if (std::abs(slope) > slope_thresh) {
+            printf("%lf\n", slope);
+            slopes.push_back(slope);
+            poly_points.push_back(ini);
+            poly_points.push_back(fini);
+            selected_lines.push_back(i);
+            cv::line(src, ini, fini, cv::Scalar(245, 40, c+=20), 5, CV_AA);
+            poly_points.push_back(ini);
+            poly_points.push_back(fini);
+            cv::fillConvexPoly(src, poly_points, cv::Scalar(245, 40, 0), CV_AA, 0);
+
+
+        }
+    }
+
+    return false;
+}

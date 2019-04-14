@@ -3,5 +3,5 @@ project(Pi_Project)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(Pi_Project main.cpp LaneDetector.cpp motion.cpp)
+add_executable(Pi_Project main.cpp LaneDetector.cpp motion.cpp crosswalk_detection.cpp)
 SET(CMAKE_CXX_FLAGS -lpthread -lwiringPi)

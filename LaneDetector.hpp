@@ -75,4 +75,6 @@ public:
     cv::Mat mask_center_buttom(cv::Mat img_edges);
 
     int predictTurn_center_bottom_frame(int &output);
+
+    bool look_for_cross_walk(std::vector<cv::Vec4i> houghLines, cv::Mat &src);
 };
