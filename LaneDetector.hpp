@@ -76,5 +76,5 @@ public:
 
     int predictTurn_center_bottom_frame(int &output);
 
-    bool look_for_cross_walk(std::vector<cv::Vec4i> houghLines, cv::Mat &src);
+    unsigned long look_for_cross_walk(std::vector<cv::Vec4i> houghLines, cv::Mat &src);
 };
