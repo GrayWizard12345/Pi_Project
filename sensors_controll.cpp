@@ -66,7 +66,7 @@ void left_interupt(int sig) {
     pwm_left_point_turn(speed);
     while (!get_left_lane);
     delay(150);
-    pwmStop();
+    //pwmStop();
     pthread_mutex_unlock(&motor_mutex);
 
 }
@@ -79,7 +79,7 @@ void right_interupt(int sig) {
     pwm_right_point_turn(speed);
     while (!get_right_lane);
     delay(150);
-    pwmStop();
+    //pwmStop();
     pthread_mutex_unlock(&motor_mutex);
 }
 
