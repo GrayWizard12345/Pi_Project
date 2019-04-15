@@ -409,15 +409,12 @@ unsigned long LaneDetector::look_for_cross_walk(std::vector<cv::Vec4i> houghLine
         if (std::abs(slope) > slope_thresh) {
             printf("%lf\n", slope);
             slopes.push_back(slope);
-            //poly_points.push_back(ini);
-            //poly_points.push_back(fini);
             selected_lines.push_back(i);
             cv::line(src, ini, fini, cv::Scalar(245, 40, c+=20), 5, CV_AA);
-            //poly_points.push_back(ini);
-            //poly_points.push_back(fini);
-            //cv::fillConvexPoly(src, poly_points, cv::Scalar(245, 40, 0), CV_AA, 0);
         }
-        printf("Num of lines: %lu\n" ,selected_lines.size());
+        //printf("Num of lines: %lu\n" ,selected_lines.size());
+        if (selected_lines.size() > 15)
+            return selected_lines.size();
     }
 
     return selected_lines.size();

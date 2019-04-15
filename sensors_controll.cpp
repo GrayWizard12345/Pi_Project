@@ -9,9 +9,6 @@
 
 using namespace std;
 
-#define LANE_DETECTED 1
-#define LANE_NOT_DETECTED 0
-
 #define get_left_lane digitalRead(LEFT_TRACER_PIN)
 #define get_right_lane digitalRead(RIGHT_TRACER_PIN)
 
