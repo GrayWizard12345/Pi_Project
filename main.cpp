@@ -166,17 +166,17 @@ void *video_loop(void *) {
             unsigned  long zebra_lines = laneDetector.look_for_cross_walk(center_buttom_lines, center);
             if (zebra_lines > 15)
                 raise(SIGRTMIN + 6);
-            left_right_lines_center_buttom_frame = laneDetector.lineSeparation(center_buttom_lines,
-                                                                               img_center_buttom_mask);
-
-            // Apply regression to obtain only one line for each side of the lane
-            lane_center_buttom_frame = laneDetector.regression(left_right_lines_center_buttom_frame,
-                                                               img_center_buttom_mask);
-
-            // Predict the turn by determining the vanishing point of the the lines
-            center_bottom_turn_predictor = 1;
-            laneDetector.predictTurn_center_bottom_frame(center_bottom_turn_predictor);
-            printf(" - %s", turnAsString[center_bottom_turn_predictor]);
+//            left_right_lines_center_buttom_frame = laneDetector.lineSeparation(center_buttom_lines,
+//                                                                               img_center_buttom_mask);
+//
+//            // Apply regression to obtain only one line for each side of the lane
+//            lane_center_buttom_frame = laneDetector.regression(left_right_lines_center_buttom_frame,
+//                                                               img_center_buttom_mask);
+//
+//            // Predict the turn by determining the vanishing point of the the lines
+//            center_bottom_turn_predictor = 1;
+//            laneDetector.predictTurn_center_bottom_frame(center_bottom_turn_predictor);
+//            printf(" - %s", turnAsString[center_bottom_turn_predictor]);
             // Plot lane detection
             //laneDetector.plotLane(img_center_buttom_mask, lane_center_buttom_frame, turnAsString[turn]);
 
@@ -206,7 +206,7 @@ void *video_loop(void *) {
 
         }
 
-        turn = (center_bottom_turn_predictor + left_bottom_turn_predictor + right_bottom_turn_predictor + 3 - 1)/3;
+        turn = (left_bottom_turn_predictor + right_bottom_turn_predictor)/2;
 
         //video_mask->write(img_mask);
         video->write(src);

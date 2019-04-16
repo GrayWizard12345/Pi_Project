@@ -411,17 +411,17 @@ int LaneDetector::left_frame_predictTurn(int &output, cv::Mat source) {
 //    vanish_x = static_cast<double>(((right_m * right_b.x) - (left_m * left_b.x) - right_b.y + left_b.y) /
 //                                       (right_m - left_m));
 
-    double y1 = left_m * img_center + left_b.y;
+//    double y1 = left_m * img_center + left_b.y;
     if (left_m > 0)
     {
         output = Turn::LEFT;
     } else {
         output = Turn::RIGHT;
     }
-    if ((source.rows / 2) - y1 - 20 > y1)
-    {
-        output = Turn::STRAIGHT;
-    }
+//    if ((source.rows / 2) - y1 - 20 > y1)
+//    {
+//        output = Turn::STRAIGHT;
+//    }
 //    // The vanishing points location determines where is the road turning
 //    if (vanish_x < (img_center - thr_vp))
 //        output = Turn::LEFT;
@@ -433,17 +433,17 @@ int LaneDetector::left_frame_predictTurn(int &output, cv::Mat source) {
     return output;
 }
 int LaneDetector::right_frame_predictTurn(int &output, cv::Mat source) {
-    double y1 = right_m * img_center + right_b.y;
+//    double y1 = right_m * img_center + right_b.y;
     if (right_m > 0)
     {
         output = Turn::LEFT;
     } else {
         output = Turn::RIGHT;
     }
-    if ((source.rows / 2) - y1 - 20> y1)
-    {
-        output = Turn::STRAIGHT;
-    }
+//    if ((source.rows / 2) - y1 - 20> y1)
+//    {
+//        output = Turn::STRAIGHT;
+//    }
 
     return output;
 }
