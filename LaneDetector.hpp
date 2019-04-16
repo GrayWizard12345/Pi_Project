@@ -76,9 +76,9 @@ public:
 
     cv::Mat mask_left_buttom(cv::Mat img_edges);
 
-    cv::Mat mask_right_buttom(cv::Mat img_edges);
+    cv::Mat mask_right_bottom(cv::Mat img_edges);
 
-    cv::Mat mask_center_buttom(cv::Mat img_edges);
+    cv::Mat mask_center_bottom(cv::Mat img_edges);
 
     int predictTurn_center_bottom_frame(int &output);
 

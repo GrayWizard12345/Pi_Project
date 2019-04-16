@@ -156,7 +156,7 @@ void *video_loop(void *) {
         }
 
         //CENTER BUTTOM FRAME HERE
-        img_center_buttom_mask = laneDetector.mask_center_buttom(img_edges);
+        img_center_buttom_mask = laneDetector.mask_center_bottom(img_edges);
         center_buttom_lines = laneDetector.houghLines(img_center_buttom_mask);
 
         Mat center = img_center_buttom_mask.clone();
@@ -184,7 +184,7 @@ void *video_loop(void *) {
         }
 
         //RIGHT BUTTOM FRAME HERE
-        img_right_buttom_mask = laneDetector.mask_right_buttom(img_edges);
+        img_right_buttom_mask = laneDetector.mask_right_bottom(img_edges);
         right_buttom_lines = laneDetector.houghLines(img_right_buttom_mask);
 
         if (!right_buttom_lines.empty()) {
