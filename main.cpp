@@ -74,7 +74,7 @@ void *video_loop(void *) {
     std::vector<cv::Point> lane_center_buttom_frame;
 
     cv::Mat img_left_bottom_mask;
-    cv::Mat img_right_buttom_mask;
+    cv::Mat img_right_bottom_mask;
     cv::Mat img_center_buttom_mask;
 
     std::vector<cv::Vec4i> left_buttom_lines;
@@ -99,7 +99,7 @@ void *video_loop(void *) {
     img_edges = laneDetector.edgeDetector(src);
     int width = src.size().width;
     int height = src.size().height;
-    video = new VideoWriter("outcpp.avi", CV_FOURCC('M', 'J', 'P', 'G'), 5, Size(width, height));
+    video = new VideoWriter("outcpp.avi", CV_FOURCC('M', 'J', 'P', 'G'), 6, Size(width, height));
     //video_edge = new VideoWriter("edge.avi",CV_FOURCC('M','J','P','G'),10, Size(img_edges.size().width, img_edges.size().height));
     //video_mask = new VideoWriter("mask.avi",CV_FOURCC('M','J','P','G'),10, Size(img_mask.size().width, img_mask.size().height));
     while (true) {
@@ -151,7 +151,7 @@ void *video_loop(void *) {
             printf("\n%s", turnAsString[left_bottom_turn_predictor]);
             // Plot lane detection
             //laneDetector.plotLane(img_left_bottom_mask, lane_left_buttom_frame, turnAsString[left_bottom_turn_predictor]);
-
+            cv::line(img_left_bottom_mask, lane_left_buttom_frame[0], lane_left_buttom_frame[1], cv::Scalar(255, 255, 255), 5, CV_AA);
 
         }
 
@@ -184,24 +184,25 @@ void *video_loop(void *) {
         }
 
         //RIGHT BUTTOM FRAME HERE
-        img_right_buttom_mask = laneDetector.mask_right_bottom(img_edges);
-        right_buttom_lines = laneDetector.houghLines(img_right_buttom_mask);
+        img_right_bottom_mask = laneDetector.mask_right_bottom(img_edges);
+        right_buttom_lines = laneDetector.houghLines(img_right_bottom_mask);
 
         if (!right_buttom_lines.empty()) {
             // Separate lines into left and right lines
             left_right_lines_right_buttom_frame = laneDetector.right_frame_lineSeparation(right_buttom_lines,
-                                                                              img_right_buttom_mask);
+                                                                              img_right_bottom_mask);
 
             // Apply regression to obtain only one line for each side of the lane
             lane_right_buttom_frame = laneDetector.regression(left_right_lines_right_buttom_frame,
-                                                              img_right_buttom_mask);
+                                                              img_right_bottom_mask);
 
             // Predict the turn by determining the vanishing point of the the lines
             right_bottom_turn_predictor = 1;
-            laneDetector.right_frame_predictTurn(right_bottom_turn_predictor, img_right_buttom_mask);
+            laneDetector.right_frame_predictTurn(right_bottom_turn_predictor, img_right_bottom_mask);
             printf(" - %s", turnAsString[right_bottom_turn_predictor]);
             // Plot lane detection
-            //laneDetector.plotLane(img_right_buttom_mask, lane_right_buttom_frame, turnAsString[turn]);
+            //laneDetector.plotLane(img_right_bottom_mask, lane_right_buttom_frame, turnAsString[turn]);
+            cv::line(img_right_bottom_mask, lane_right_buttom_frame[0], lane_right_buttom_frame[1], cv::Scalar(255, 255, 255), 5, CV_AA);
 
 
         }
@@ -213,8 +214,8 @@ void *video_loop(void *) {
         //video_edge->write(img_edges);
         //imshow("Video", img_edges);
         //imshow("Video", center);
-        //imshow("LEFT_BUTTOM", img_left_bottom_mask);
-        //imshow("RIGHT_BUTTOM", img_right_buttom_mask);
+        imshow("LEFT_BUTTOM", img_left_bottom_mask);
+        imshow("RIGHT_BUTTOM", img_right_bottom_mask);
         //imshow("CENTER_BUTTOM", img_center_buttom_mask);
 
         printf("\n%s", turnAsString[turn]);
