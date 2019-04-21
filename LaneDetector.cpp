@@ -65,11 +65,11 @@ cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
     int lowThreshold = 35;
     int ratio = 3;
     int kernel_size = 3;
-
-    cv::blur(output, output, cv::Size(3, 3));
+    cv::Mat blur_mat;
+    cv::blur(output, blur_mat, cv::Size(3, 3));
 
     // Filter the binary image to obtain the edges
-    cv::Canny(output, output, lowThreshold, lowThreshold * ratio, kernel_size);
+    cv::Canny(blur_mat, output, lowThreshold, lowThreshold * ratio, kernel_size);
     //printf("\nEdge detector: %d -- %d", output.cols, output.rows);
     return output;
 }

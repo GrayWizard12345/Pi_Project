@@ -75,3 +75,5 @@ void pwm_right_point_turn(int speed);
 void turn_left_by_slope(int speed, double slope);
 
 void turn_right_by_slope(int speed, double slope);
+
+void pwm_go_smooth(int speedLeft, int speedRight);

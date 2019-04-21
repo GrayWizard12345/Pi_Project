@@ -154,3 +154,11 @@ void turn_right_by_slope(int speed, double slope) {
     softPwmWrite(IN4_PIN, MIN_SPEED);
     //printf("PWM go_1\n");
 }
+
+// Smooth turn is achieved with difference in speed in left and right motors
+void pwm_go_smooth(int speedLeft, int speedRight) {
+    softPwmWrite(IN1_PIN, speedLeft);
+    softPwmWrite(IN2_PIN, MIN_SPEED);
+    softPwmWrite(IN3_PIN, speedRight);
+    softPwmWrite(IN4_PIN, MIN_SPEED);
+}

@@ -20,7 +20,7 @@ using namespace std;
 
 #define LEFT_SIGNAL_NUM SIGUSR1
 #define RIGHT_SIGNAL_NUM SIGUSR2
-#define STOP_SIGNAL SIGRTMIN+5
+#define STOP_SIGNAL SIGRTMIN + 5
 
 #define BLACK 1
 #define WHITE 0
