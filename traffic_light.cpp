@@ -1,3 +1,4 @@
+#pragma once
 #include "traffic_light.hpp"
 
 using namespace cv;
@@ -12,12 +13,13 @@ void *trafficLightLoop(void*) {
     //delay(1000);
     trafficLightStatus = Status::NON_TRAFFIC_LIGHT;
     printf("\nTraffic light thread\n");
-    printf("\nTraffic light thread - width: %d\n", frame_for_traffic_light.size().width);
+    delay(1000);
+    printf("\nTraffic light thread - width: %d\n", frame.size().width);
     Rect rec((1280 * 3) / 4, 0, 1280 / 4, 960 / 2);
     int circleCount = 0;
     while (1) {
 
-        Mat rightTopBgr = frame_for_traffic_light(rec);
+        Mat rightTopBgr = frame(rec);
         Mat hsv;
         cvtColor(rightTopBgr, hsv, COLOR_BGR2HSV);
 
@@ -33,7 +35,7 @@ void *trafficLightLoop(void*) {
 
         vector<Vec3f> circles;
         //detect red circles
-        HoughCircles(red_hue_image, circles, CV_HOUGH_GRADIENT, 1, red_hue_image.rows / 8, 110, 35, 0, 0);
+        HoughCircles(red_hue_image, circles, CV_HOUGH_GRADIENT, 1, red_hue_image.rows / 8, 110, 22, 0, 0);
 
         printf("circle count %d \n", circleCount);
 
@@ -43,8 +45,9 @@ void *trafficLightLoop(void*) {
                 int radius = round(circles[current_circle][2]);
 
                 //draw circle on the background
-                circle(rightTopBgr, center, radius, Scalar(0, 255, 0), 5);
+                circle(traffic_light, center, radius, Scalar(0, 255, 0), 5);
             }
+            traffic_light = red_hue_image;
             raise(RED_TRAFFIC_LIGHT_SIGNAL);
         }
 
@@ -53,7 +56,7 @@ void *trafficLightLoop(void*) {
 
         Mat green_hue_image;
         GaussianBlur(greenMask, green_hue_image, Size(9, 9), 2, 2);
-        HoughCircles(red_hue_image, circles, CV_HOUGH_GRADIENT, 1, green_hue_image.rows / 8, 110, 35, 0, 0);
+        HoughCircles(red_hue_image, circles, CV_HOUGH_GRADIENT, 1, green_hue_image.rows / 8, 110, 22, 0, 0);
 
 
         if ((circleCount = circles.size()) > 1) {
@@ -62,17 +65,15 @@ void *trafficLightLoop(void*) {
                 int radius = round(circles[current_circle][2]);
 
                 //draw circle on the background
-                circle(rightTopBgr, center, radius, Scalar(0, 0, 255), 5);
+                circle(traffic_light, center, radius, Scalar(0, 0, 255), 5);
             }
+            traffic_light = green_hue_image;
             raise(GREEN_TRAFFIC_LIGHT_SIGNAL);
         }
-        imshow("Traffic light lookUp",rightTopBgr);
-        if (cvWaitKey(20) == 'q')
-            break;
     }
 }
 
-int initTrafficLightThread(Mat *src) {
+int initTrafficLightThread() {
     if (pthread_create(&trafficLightThread, NULL, trafficLightLoop, NULL)) {
         fprintf(stderr, "Error creating traffic light thread\n");
         return 1;

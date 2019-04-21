@@ -537,4 +537,3 @@ unsigned long LaneDetector::look_for_cross_walk(std::vector<cv::Vec4i> houghLine
 
     return selected_lines.size();
 }
-

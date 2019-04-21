@@ -18,6 +18,10 @@ using namespace cv;
 raspicam::RaspiCam_Cv capture; // initialise the raspicam object
 //Initialise the image as a matrix container
 Mat src;
+Mat frame = src;
+
+Mat traffic_light;
+
 VideoWriter *video;
 VideoWriter *video_edge;
 VideoWriter *video_mask;
@@ -25,6 +29,8 @@ static int turn;
 static int left_frame_turn;
 static int right_frame_turn;
 static int center_bottom_turn_predictor;
+
+Status trafficLightStatus = Status::NON_TRAFFIC_LIGHT;
 
 
 char *turnAsString[] = {const_cast<char *>("LEFT"), const_cast<char *>("STRAIGHT"), const_cast<char *>("RIGHT")};
@@ -114,7 +120,8 @@ void *video_loop(void *) {
         pthread_mutex_lock(&frame_mutex);
         capture.grab(); //grab the scene using raspicam
         capture.retrieve(src); // retrieve the captured scene as an image and store it in matrix container
-        frame_for_traffic_light = src;
+        frame = src;
+
         //LEFT BOTTOM FRAME
         left_mask = laneDetector.mask_left_buttom(src);
         left_edged = laneDetector.edgeDetector(left_mask);
@@ -199,7 +206,7 @@ void *video_loop(void *) {
         //imshow("RIGHT_BUTTOM", right_mask);
         imshow("LEFT_BUTTOM_EDGED", left_edged);
         imshow("RIGHT_BUTTOM_EDGED", right_edged);
-        //imshow("CENTER_BUTTOM", img_center_buttom_mask);
+        imshow("traffic_light", traffic_light);
 
         printf("\n%s", turnAsString[turn]);
         //namedWindow("Hello world");
