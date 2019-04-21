@@ -3,25 +3,21 @@
 using namespace cv;
 using namespace std;
 
-#define RED_TRAFFIC_LIGHT_SIGNAL SIGRTMIN + 6
-#define GREEN_TRAFFIC_LIGHT_SIGNAL SIGRTMIN + 7
+#define RED_TRAFFIC_LIGHT_SIGNAL (SIGRTMIN + 6)
+#define GREEN_TRAFFIC_LIGHT_SIGNAL (SIGRTMIN + 7)
 
 pthread_t trafficLightThread;
-raspicam::RaspiCam_Cv trafficLightCapture;
 
-void *trafficLightLoop(void *) {
+void *trafficLightLoop(void*) {
+    //delay(1000);
     trafficLightStatus = Status::NON_TRAFFIC_LIGHT;
-    printf("traffic light thread\n");
-    Mat wholeBgr;
-    trafficLightCapture.open();
+    printf("\nTraffic light thread\n");
+    printf("\nTraffic light thread - width: %d\n", frame_for_traffic_light.size().width);
     Rect rec((1280 * 3) / 4, 0, 1280 / 4, 960 / 2);
     int circleCount = 0;
     while (1) {
-        trafficLightCapture.grab();
-        trafficLightCapture.retrieve(wholeBgr);
 
-        Mat rightTopBgr = wholeBgr(rec);
-
+        Mat rightTopBgr = frame_for_traffic_light(rec);
         Mat hsv;
         cvtColor(rightTopBgr, hsv, COLOR_BGR2HSV);
 
@@ -70,15 +66,13 @@ void *trafficLightLoop(void *) {
             }
             raise(GREEN_TRAFFIC_LIGHT_SIGNAL);
         }
-
+        imshow("Traffic light lookUp",rightTopBgr);
         if (cvWaitKey(20) == 'q')
             break;
     }
-
-    trafficLightCapture.release();
 }
 
-int initTrafficLightThread() {
+int initTrafficLightThread(Mat *src) {
     if (pthread_create(&trafficLightThread, NULL, trafficLightLoop, NULL)) {
         fprintf(stderr, "Error creating traffic light thread\n");
         return 1;

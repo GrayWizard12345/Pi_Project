@@ -8,6 +8,7 @@
 #include <raspicam/raspicam_cv.h>
 #include <pthread.h>
 #include "LaneDetector.hpp"
+#include "traffic_light.hpp"
 #include <cmath>
 
 using namespace std;
@@ -15,6 +16,8 @@ using namespace cv;
 
 
 raspicam::RaspiCam_Cv capture; // initialise the raspicam object
+//Initialise the image as a matrix container
+Mat src;
 VideoWriter *video;
 VideoWriter *video_edge;
 VideoWriter *video_mask;
@@ -22,6 +25,7 @@ static int turn;
 static int left_frame_turn;
 static int right_frame_turn;
 static int center_bottom_turn_predictor;
+
 
 char *turnAsString[] = {const_cast<char *>("LEFT"), const_cast<char *>("STRAIGHT"), const_cast<char *>("RIGHT")};
 int speed;
@@ -62,8 +66,7 @@ std::vector<cv::Point> lane_right_buttom_frame;
 std::vector<cv::Point> lane_center_buttom_frame;
 
 void *video_loop(void *) {
-    //Initialise the image as a matrix container
-    Mat src;
+
 
     cv::Mat img_denoise;
     cv::Mat img_edges;
@@ -79,7 +82,8 @@ void *video_loop(void *) {
     cv::Mat right_mask;
     cv::Mat right_edged;
 
-    cv::Mat img_center_buttom_mask;
+    cv::Mat center_mask;
+    cv::Mat center_edged;
 
     std::vector<cv::Vec4i> left_lines;
     std::vector<cv::Vec4i> right_buttom_lines;
@@ -100,7 +104,7 @@ void *video_loop(void *) {
 
     capture.grab(); //grab the scene using raspicam
     capture.retrieve(src); // retrieve the captured scene as an image and store it in matrix container
-    img_edges = laneDetector.edgeDetector(src);
+    //img_edges = laneDetector.edgeDetector(src);
     int width = src.size().width;
     int height = src.size().height;
     video = new VideoWriter("outcpp.avi", CV_FOURCC('M', 'J', 'P', 'G'), 6, Size(width, height));
@@ -110,17 +114,7 @@ void *video_loop(void *) {
         pthread_mutex_lock(&frame_mutex);
         capture.grab(); //grab the scene using raspicam
         capture.retrieve(src); // retrieve the captured scene as an image and store it in matrix container
-
-        //img_edges = laneDetector.edgeDetector(src);
-
-/*
-        // Mask the image so that we only get the ROI
-        img_mask = laneDetector.mask(img_edges);
-
-        // Obtain Hough lines in the cropped image
-        lines = laneDetector.houghLines(img_mask);
-*/
-
+        frame_for_traffic_light = src;
         //LEFT BOTTOM FRAME
         left_mask = laneDetector.mask_left_buttom(src);
         left_edged = laneDetector.edgeDetector(left_mask);
@@ -139,16 +133,17 @@ void *video_loop(void *) {
 
             // Plot lane detection
             printf("\n%s", turnAsString[left_frame_turn]);
-            laneDetector.plotLane(left_mask, lane_left_buttom_frame, turnAsString[left_frame_turn]);
+            laneDetector.plotLane(left_mask, lane_left_buttom_frame, turnAsString[left_frame_turn], "left_bottom");
         } else {
             left_frame_turn = Turn::RIGHT;
         }
 
         //CENTER BUTTOM FRAME HERE
-        img_center_buttom_mask = laneDetector.mask_center_bottom(img_edges);
-        center_buttom_lines = laneDetector.houghLines(img_center_buttom_mask);
+        center_mask = laneDetector.mask_center_bottom(src);
+        center_edged = laneDetector.edgeDetector(center_mask);
+        center_buttom_lines = laneDetector.houghLines(center_edged);
 
-        Mat center = img_center_buttom_mask.clone();
+        Mat center = center_mask.clone();
 
         if (!center_buttom_lines.empty()) {
             // Separate lines into left and right lines
@@ -189,7 +184,7 @@ void *video_loop(void *) {
 
             // Plot lane detection
             printf(" - %s", turnAsString[right_frame_turn]);
-            laneDetector.plotLane(right_mask, lane_right_buttom_frame, turnAsString[turn]);
+            laneDetector.plotLane(right_mask, lane_right_buttom_frame, turnAsString[turn], "Right_bottom");
         }
 
         turn = (left_frame_turn + right_frame_turn) / 2;
@@ -200,8 +195,10 @@ void *video_loop(void *) {
         //video_edge->write(img_edges);
         //imshow("Video", img_edges);
         //imshow("Video", center);
-        imshow("LEFT_BUTTOM", left_mask);
-        imshow("RIGHT_BUTTOM", right_mask);
+        //imshow("LEFT_BUTTOM", left_mask);
+        //imshow("RIGHT_BUTTOM", right_mask);
+        imshow("LEFT_BUTTOM_EDGED", left_edged);
+        imshow("RIGHT_BUTTOM_EDGED", right_edged);
         //imshow("CENTER_BUTTOM", img_center_buttom_mask);
 
         printf("\n%s", turnAsString[turn]);
@@ -267,6 +264,10 @@ int main(int argc, char **argv) {
         return 1;
 
     }
+
+    initTrafficLightSignal();
+    initTrafficLightThread();
+
     turn = STRAIGHT;
     //while(1);
     delay(15000);
@@ -301,7 +302,8 @@ int main(int argc, char **argv) {
             }
         }
 
-        pwm_go_smooth(speedLeft, speedRight);
+       if(trafficLightStatus != RED_LIGHT)
+            pwm_go_smooth(speedLeft, speedRight);
 
         printf("speed left: %d, speed right: %d, slope: %fl\n", speedLeft, speedRight, line.slope);
 
@@ -316,5 +318,3 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-
-// left / 5 left

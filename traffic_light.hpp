@@ -20,8 +20,8 @@ enum Status {
     RED_LIGHT,
     GREEN_LIGHT
 };
-
-extern Status trafficLightStatus = Status::NON_TRAFFIC_LIGHT;
+cv::Mat frame_for_traffic_light;
+static Status trafficLightStatus = Status::NON_TRAFFIC_LIGHT;
 
 /**
  *  @brief the thread function for red and green light detection
@@ -30,6 +30,7 @@ void *trafficLightLoop(void *);
 
 /**
  * @brief initializing traffic light thread
+ * @param src is used to get a ROI from captured frame
  */
 int initTrafficLightThread();
 

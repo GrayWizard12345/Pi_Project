@@ -52,7 +52,7 @@ cv::Mat LaneDetector::deNoise(cv::Mat inputImage) {
 cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
     cv::Mat output;
     cv::Mat kernel;
-    cv::Point anchor;
+    //cv::Point anchor;
 
     // Convert image from RGB to gray
     cv::cvtColor(img_noise, output, cv::COLOR_RGB2GRAY);
@@ -478,7 +478,7 @@ int LaneDetector::predictTurn_center_bottom_frame(int &output) {
  *@param turn is the output string containing the turn information
  *@return The function returns a 0
  */
-int LaneDetector::plotLane(cv::Mat inputImage, std::vector<cv::Point> lane, std::string turn) {
+int LaneDetector::plotLane(cv::Mat inputImage, std::vector<cv::Point> lane, std::string turn, std::string window_name) {
     std::vector<cv::Point> poly_points;
     cv::Mat output;
 
@@ -492,15 +492,15 @@ int LaneDetector::plotLane(cv::Mat inputImage, std::vector<cv::Point> lane, std:
     cv::addWeighted(output, 0.3, inputImage, 1.0 - 0.3, 0, inputImage);
 
     // Plot both lines of the lane boundary
-    cv::line(inputImage, lane[0], lane[1], cv::Scalar(0, 255, 255), 5, CV_AA);
-    cv::line(inputImage, lane[2], lane[3], cv::Scalar(0, 255, 255), 5, CV_AA);
+    cv::line(inputImage, lane[0], lane[1], cv::Scalar(255, 255, 255), 5, CV_AA);
+    cv::line(inputImage, lane[2], lane[3], cv::Scalar(255, 255, 255), 5, CV_AA);
 
     // Plot the turn message
     cv::putText(inputImage, turn, cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
 
     // Show the final output image
-    cv::namedWindow("Lane", CV_WINDOW_AUTOSIZE);
-    cv::imshow("Lane", inputImage);
+    cv::namedWindow(window_name, CV_WINDOW_AUTOSIZE);
+    cv::imshow(window_name, inputImage);
     return 0;
 }
 

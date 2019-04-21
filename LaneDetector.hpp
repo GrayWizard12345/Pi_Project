@@ -72,7 +72,7 @@ public:
     int right_frame_predictTurn(int &output, cv::Mat source);
 
     int plotLane(cv::Mat inputImage, std::vector<cv::Point> lane,
-                 std::string turn);  // Plot the resultant lane and turn prediction in the frame.
+                 std::string turn, std::string window_name);  // Plot the resultant lane and turn prediction in the frame.
 
     cv::Mat mask_left_buttom(cv::Mat img_edges);
 
