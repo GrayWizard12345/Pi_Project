@@ -112,7 +112,7 @@ cv::Mat LaneDetector::mask_right_bottom(cv::Mat img_edges) {
     cv::fillConvexPoly(mask, pts, 4, cv::Scalar(255, 0, 0));
     // Multiply the edges image and the mask to get the output
     cv::bitwise_and(img_edges, mask, output);*/
-    cv::Rect rec(1280 / 2, 420, 1280 / 2, 960 - 420);
+    cv::Rect rec(1280 / 2, 540, 1280 / 2, 960 - 540);
     output = img_edges(rec);
 
     return output;
@@ -133,7 +133,7 @@ cv::Mat LaneDetector::mask_center_bottom(cv::Mat img_edges) {
     // Multiply the edges image and the mask to get the output
     cv::bitwise_and(img_edges, mask, output);
   */
-    cv::Rect rec(1280 / 4, 420, 1280 / 2, 960 - 420);
+    cv::Rect rec(1280 / 4, 540, 1280 / 2, 960 - 540);
     output = img_edges(rec);
     return output;
 }

@@ -37,7 +37,6 @@ void *trafficLightLoop(void*) {
         //detect red circles
         HoughCircles(red_hue_image, circles, CV_HOUGH_GRADIENT, 1, red_hue_image.rows / 8, 110, 22, 0, 0);
 
-        printf("circle count %d \n", circleCount);
 
         if ((circleCount = circles.size()) >= 1) {
             for (size_t current_circle = 0; current_circle < circles.size(); ++current_circle) {
@@ -45,9 +44,9 @@ void *trafficLightLoop(void*) {
                 int radius = round(circles[current_circle][2]);
 
                 //draw circle on the background
-                circle(traffic_light, center, radius, Scalar(0, 255, 0), 5);
+                circle(red_hue_image, center, radius, Scalar(0, 255, 0), 5);
             }
-            traffic_light = red_hue_image;
+            printf("Red light detected - circles: %d \n", circleCount);
             raise(RED_TRAFFIC_LIGHT_SIGNAL);
         }
 
@@ -56,7 +55,7 @@ void *trafficLightLoop(void*) {
 
         Mat green_hue_image;
         GaussianBlur(greenMask, green_hue_image, Size(9, 9), 2, 2);
-        HoughCircles(red_hue_image, circles, CV_HOUGH_GRADIENT, 1, green_hue_image.rows / 8, 110, 22, 0, 0);
+        HoughCircles(green_hue_image, circles, CV_HOUGH_GRADIENT, 1, green_hue_image.rows / 8, 110, 22, 0, 0);
 
 
         if ((circleCount = circles.size()) > 1) {
@@ -65,9 +64,9 @@ void *trafficLightLoop(void*) {
                 int radius = round(circles[current_circle][2]);
 
                 //draw circle on the background
-                circle(traffic_light, center, radius, Scalar(0, 0, 255), 5);
+                circle(green_hue_image, center, radius, Scalar(0, 0, 255), 5);
             }
-            traffic_light = green_hue_image;
+            printf("Green light detected - circles: %d \n", circleCount);
             raise(GREEN_TRAFFIC_LIGHT_SIGNAL);
         }
     }

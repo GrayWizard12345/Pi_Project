@@ -187,8 +187,8 @@ void *ultrasonic_loop(void *) {
         if (temp != 0)
             distance = temp;
         if (distance < 10) {
-            //printf("\nObstacle detected!!");
-            //raise(SIGRTMIN + 5);
+            printf("\nObstacle detected!!");
+            raise(SIGRTMIN + 5);
         }
     }
 }

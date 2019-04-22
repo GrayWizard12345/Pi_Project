@@ -18,9 +18,7 @@ using namespace cv;
 raspicam::RaspiCam_Cv capture; // initialise the raspicam object
 //Initialise the image as a matrix container
 Mat src;
-Mat frame = src;
-
-Mat traffic_light;
+Mat frame;
 
 VideoWriter *video;
 VideoWriter *video_edge;
@@ -206,7 +204,7 @@ void *video_loop(void *) {
         //imshow("RIGHT_BUTTOM", right_mask);
         imshow("LEFT_BUTTOM_EDGED", left_edged);
         imshow("RIGHT_BUTTOM_EDGED", right_edged);
-        imshow("traffic_light", traffic_light);
+        //imshow("traffic_light", traffic_light);
 
         printf("\n%s", turnAsString[turn]);
         //namedWindow("Hello world");
@@ -295,16 +293,20 @@ int main(int argc, char **argv) {
             if (turn == Turn::LEFT) {
                 speedRight = speed;
                 if (line.slope <= 1) {
-                    speedLeft = speed * line.slope;
+                    //speedLeft = speed * line.slope;
+                    speedLeft = speed / 5;
                 } else {
-                    speedLeft = speed * (1 - (1 / line.slope));
+                    //speedLeft = speed * (1 - (1 / line.slope));
+                    speedLeft = speed / 2;
                 }
             } else {
                 speedLeft = speed;
                 if (line.slope <= 1) {
-                    speedRight = speed * line.slope;
+                    //speedRight = speed * line.slope;
+                    speedRight = speed / 5;
                 } else {
-                    speedRight = speed * (1 - (1 / line.slope));
+                    //speedRight = speed * (1 - (1 / line.slope));
+                    speedRight = speed / 2;
                 }
             }
         }
@@ -312,7 +314,7 @@ int main(int argc, char **argv) {
        if(trafficLightStatus != RED_LIGHT)
             pwm_go_smooth(speedLeft, speedRight);
 
-        printf("speed left: %d, speed right: %d, slope: %fl\n", speedLeft, speedRight, line.slope);
+        printf("\nspeed left: %d, speed right: %d, slope: %fl\n", speedLeft, speedRight, line.slope);
 
 
         //printf("\nLeft: %lf\nRight : %lf", temp, temp2);
