@@ -52,7 +52,6 @@ void crosswalk_handler(int sigNum);
 
 void *video_loop(void *);
 
-
 int main(int argc, char **argv) {
     signal(SIGINT, signalHandler);
     signal(SIGUSR1, left_interupt);
