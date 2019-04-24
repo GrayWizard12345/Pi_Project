@@ -4,14 +4,11 @@
 using namespace cv;
 using namespace std;
 
-#define RED_TRAFFIC_LIGHT_SIGNAL (SIGRTMIN + 6)
-#define GREEN_TRAFFIC_LIGHT_SIGNAL (SIGRTMIN + 7)
-
 pthread_t trafficLightThread;
 
 void *trafficLightLoop(void*) {
     //delay(1000);
-    trafficLightStatus = Status::NON_TRAFFIC_LIGHT;
+    trafficLightStatus = Status::RED_LIGHT;
     printf("\nTraffic light thread\n");
     delay(1000);
     printf("\nTraffic light thread - width: %d\n", frame.size().width);
@@ -35,7 +32,7 @@ void *trafficLightLoop(void*) {
 
         vector<Vec3f> circles;
         //detect red circles
-        HoughCircles(red_hue_image, circles, CV_HOUGH_GRADIENT, 1, red_hue_image.rows / 8, 110, 22, 0, 0);
+        HoughCircles(red_hue_image, circles, CV_HOUGH_GRADIENT, 1, red_hue_image.rows / 8, 110, 20, 0, 0);
 
 
         if ((circleCount = circles.size()) >= 1) {
@@ -47,15 +44,16 @@ void *trafficLightLoop(void*) {
                 circle(red_hue_image, center, radius, Scalar(0, 255, 0), 5);
             }
             printf("Red light detected - circles: %d \n", circleCount);
-            raise(RED_TRAFFIC_LIGHT_SIGNAL);
+            trafficLightStatus = RED_LIGHT;
         }
 
-        Mat greenMask;
-        inRange(hsv, Scalar(65, 60, 60), Scalar(80, 255, 255), greenMask);
-
+        Mat greenLowerMask, greenHigherMask;
+        inRange(hsv, Scalar(65, 60, 60), Scalar(70, 255, 200), greenLowerMask);
+        inRange(hsv, Scalar(65, 70, 60), Scalar(70, 255, 255), greenHigherMask);
         Mat green_hue_image;
-        GaussianBlur(greenMask, green_hue_image, Size(9, 9), 2, 2);
-        HoughCircles(green_hue_image, circles, CV_HOUGH_GRADIENT, 1, green_hue_image.rows / 8, 110, 22, 0, 0);
+        addWeighted(redLowerMask, 1.0, redHigherMask, 1.0, 0.0, green_hue_image);
+        GaussianBlur(green_hue_image, green_hue_image, Size(9, 9), 2, 2);
+        HoughCircles(green_hue_image, circles, CV_HOUGH_GRADIENT, 1, green_hue_image.rows / 8, 110, 20, 0, 0);
 
 
         if ((circleCount = circles.size()) > 1) {
@@ -67,7 +65,7 @@ void *trafficLightLoop(void*) {
                 circle(green_hue_image, center, radius, Scalar(0, 0, 255), 5);
             }
             printf("Green light detected - circles: %d \n", circleCount);
-            raise(GREEN_TRAFFIC_LIGHT_SIGNAL);
+            trafficLightStatus = GREEN_LIGHT;
         }
     }
 }
@@ -77,17 +75,4 @@ int initTrafficLightThread() {
         fprintf(stderr, "Error creating traffic light thread\n");
         return 1;
     }
-}
-
-void trafficLightHandler(int signum) {
-    if (signum == RED_TRAFFIC_LIGHT_SIGNAL)
-        trafficLightStatus = Status::RED_LIGHT;
-    else if (signum == GREEN_TRAFFIC_LIGHT_SIGNAL) {
-        trafficLightStatus = Status::GREEN_LIGHT;
-    }
-}
-
-void initTrafficLightSignal() {
-    signal(RED_TRAFFIC_LIGHT_SIGNAL, trafficLightHandler);
-    signal(GREEN_TRAFFIC_LIGHT_SIGNAL, trafficLightHandler);
 }

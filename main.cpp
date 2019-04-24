@@ -28,10 +28,10 @@ static int left_frame_turn;
 static int right_frame_turn;
 static int center_bottom_turn_predictor;
 
-Status trafficLightStatus = Status::NON_TRAFFIC_LIGHT;
+Status trafficLightStatus = Status::RED_LIGHT;
 
 
-char *turnAsString[] = {const_cast<char *>("LEFT"), const_cast<char *>("STRAIGHT"), const_cast<char *>("RIGHT")};
+string turnAsString[] = {"LEFT", "STRAIGHT", "RIGHT"};
 int speed;
 int ratio_;
 
@@ -65,9 +65,36 @@ void crosswalk_handler(int sigNum) {
 LaneDetector laneDetector;
 pthread_mutex_t frame_mutex;
 
-std::vector<cv::Point> lane_left_buttom_frame;
+std::vector<cv::Point> lane_left_bottom_frame;
 std::vector<cv::Point> lane_right_buttom_frame;
 std::vector<cv::Point> lane_center_buttom_frame;
+
+struct Line {
+    double slope;
+    double length;
+};
+
+Line centerLine;
+double slope;
+Line getSlope(Point_<int> &leftInitial, Point_<int> &leftFinal, Point_<int> &rightInitial, Point_<int> &rightFinal) {
+
+    Point_<int> final;
+    final.y = (leftFinal.y + rightFinal.y) / 2;
+    final.x = (leftFinal.x + rightFinal.x) / 2;
+
+    Point_<int> initial;
+    initial.y = (leftInitial.y + rightInitial.y) / 2;
+    initial.x = (rightInitial.x + rightInitial.x) / 2;
+
+    double slope = (static_cast<double>(final.y) - static_cast<double>(initial.y)) /
+                   (static_cast<double>(final.x) - static_cast<double>(initial.x) + 0.00001);
+
+    Line line;
+    line.slope = slope;
+    line.length = sqrt(pow(final.y - initial.y, 2) + pow(initial.x - initial.x, 2));
+
+    return line;
+}
 
 void *video_loop(void *) {
 
@@ -90,8 +117,8 @@ void *video_loop(void *) {
     cv::Mat center_edged;
 
     std::vector<cv::Vec4i> left_lines;
-    std::vector<cv::Vec4i> right_buttom_lines;
-    std::vector<cv::Vec4i> center_buttom_lines;
+    std::vector<cv::Vec4i> right_bottom_lines;
+    std::vector<cv::Vec4i> center_bottom_lines;
 
     std::vector<std::vector<cv::Vec4i> > left_lines_separated;
     std::vector<std::vector<cv::Vec4i> > right_lines_separated;
@@ -111,6 +138,8 @@ void *video_loop(void *) {
     //img_edges = laneDetector.edgeDetector(src);
     int width = src.size().width;
     int height = src.size().height;
+    double left_slope;
+    double right_slope;
     video = new VideoWriter("outcpp.avi", CV_FOURCC('M', 'J', 'P', 'G'), 6, Size(width, height));
     //video_edge = new VideoWriter("edge.avi",CV_FOURCC('M','J','P','G'),10, Size(img_edges.size().width, img_edges.size().height));
     //video_mask = new VideoWriter("mask.avi",CV_FOURCC('M','J','P','G'),10, Size(img_mask.size().width, img_mask.size().height));
@@ -121,7 +150,7 @@ void *video_loop(void *) {
         frame = src;
 
         //LEFT BOTTOM FRAME
-        left_mask = laneDetector.mask_left_buttom(src);
+        left_mask = laneDetector.mask_left_bottom(src);
         left_edged = laneDetector.edgeDetector(left_mask);
         left_lines = laneDetector.houghLines(left_edged);
 
@@ -130,70 +159,64 @@ void *video_loop(void *) {
             left_lines_separated = laneDetector.left_frame_lineSeparation(left_lines, left_edged);
 
             // Apply regression to obtain only one line for each side of the lane
-            lane_left_buttom_frame = laneDetector.regression(left_lines_separated, left_mask);
+            lane_left_bottom_frame = laneDetector.regression(left_lines_separated, left_mask);
 
             // Predict the turn by determining the vanishing point of the the lines
-            left_frame_turn = Turn::STRAIGHT;
-            laneDetector.left_frame_predictTurn(left_frame_turn, left_mask);
+//            laneDetector.left_frame_predictTurn(left_frame_turn, left_mask);
+            laneDetector.predictTurn_center_bottom_frame(left_frame_turn);
 
             // Plot lane detection
-            printf("\n%s", turnAsString[left_frame_turn]);
-            laneDetector.plotLane(left_mask, lane_left_buttom_frame, turnAsString[left_frame_turn], "left_bottom");
+//            printf("\n%s", turnAsString[left_frame_turn]);
+            laneDetector.plotLane(left_mask, lane_left_bottom_frame[2], lane_left_bottom_frame[3],
+                                  turnAsString[left_frame_turn] + " " + to_string(laneDetector.left_m), "left_bottom");
+            left_slope = laneDetector.left_m;
         } else {
-            left_frame_turn = Turn::RIGHT;
+            left_frame_turn = LEFT;
         }
 
-        //CENTER BUTTOM FRAME HERE
+        //CENTER BOTTOM FRAME HERE
         center_mask = laneDetector.mask_center_bottom(src);
         center_edged = laneDetector.edgeDetector(center_mask);
-        center_buttom_lines = laneDetector.houghLines(center_edged);
+        center_bottom_lines = laneDetector.houghLines(center_edged);
 
         Mat center = center_mask.clone();
 
-        if (!center_buttom_lines.empty()) {
+        if (!center_bottom_lines.empty()) {
             // Separate lines into left and right lines
-            unsigned long zebra_lines = laneDetector.look_for_cross_walk(center_buttom_lines, center);
+            unsigned long zebra_lines = laneDetector.look_for_cross_walk(center_bottom_lines, center);
             if (zebra_lines > 15)
                 raise(SIGRTMIN + 6);
-/*        left_right_lines_center_buttom_frame = laneDetector.lineSeparation(center_buttom_lines,
-                                                                               img_center_buttom_mask);
 
-            // Apply regression to obtain only one line for each side of the lane
-            lane_center_buttom_frame = laneDetector.regression(left_right_lines_center_buttom_frame,
-                                                               img_center_buttom_mask);
-
-            // Predict the turn by determining the vanishing point of the the lines
-            center_bottom_turn_predictor = 1;
-            laneDetector.predictTurn_center_bottom_frame(center_bottom_turn_predictor);
-            printf(" - %s", turnAsString[center_bottom_turn_predictor]);
-             Plot lane detection
-            laneDetector.plotLane(img_center_buttom_mask, lane_center_buttom_frame, turnAsString[turn]);
-*/
         }
 
         //RIGHT BOTTOM FRAME HERE
         right_mask = laneDetector.mask_right_bottom(src);
         right_edged = laneDetector.edgeDetector(right_mask);
-        right_buttom_lines = laneDetector.houghLines(right_edged);
+        right_bottom_lines = laneDetector.houghLines(right_edged);
 
-        if (!right_buttom_lines.empty()) {
+        if (!right_bottom_lines.empty()) {
             // Separate lines into left and right lines
-            right_lines_separated = laneDetector.right_frame_lineSeparation(right_buttom_lines, right_edged);
+            right_lines_separated = laneDetector.right_frame_lineSeparation(right_bottom_lines, right_edged);
 
             // Apply regression to obtain only one line for each side of the lane
             lane_right_buttom_frame = laneDetector.regression(right_lines_separated, right_mask);
 
             // Predict the turn by determining the vanishing point of the the lines
-            right_frame_turn = Turn::STRAIGHT;
-            laneDetector.right_frame_predictTurn(right_frame_turn, right_mask);
-
+            //laneDetector.right_frame_predictTurn(right_frame_turn, right_mask);
+            laneDetector.predictTurn_center_bottom_frame(right_frame_turn);
             // Plot lane detection
-            printf(" - %s", turnAsString[right_frame_turn]);
-            laneDetector.plotLane(right_mask, lane_right_buttom_frame, turnAsString[turn], "Right_bottom");
+//            printf(" - %s", turnAsString[right_frame_turn]);
+            laneDetector.plotLane(right_mask, lane_right_buttom_frame[0], lane_right_buttom_frame[1],
+                                  turnAsString[right_frame_turn] + " " + to_string(laneDetector.right_m),
+                                  "Right_bottom");
+            right_slope = laneDetector.right_m;
+        } else {
+            right_frame_turn = RIGHT;
         }
 
         turn = (left_frame_turn + right_frame_turn) / 2;
-
+        printf("turn: %s\n", turnAsString[turn]);
+        slope = (abs(right_slope) + abs(left_slope)) / 2;
         //video_mask->write(img_mask);
         //video_mask->write(img_mask);
         video->write(src);
@@ -202,40 +225,16 @@ void *video_loop(void *) {
         //imshow("Video", center);
         //imshow("LEFT_BUTTOM", left_mask);
         //imshow("RIGHT_BUTTOM", right_mask);
-        imshow("LEFT_BUTTOM_EDGED", left_edged);
-        imshow("RIGHT_BUTTOM_EDGED", right_edged);
-        //imshow("traffic_light", traffic_light);
+//        imshow("LEFT_BUTTOM_EDGED", left_mask);
+//        imshow("RIGHT_BUTTOM_EDGED", right_mask);
+//        //imshow("traffic_light", traffic_light);
+
 
         printf("\n%s", turnAsString[turn]);
         //namedWindow("Hello world");
         cvWaitKey(1);
         pthread_mutex_unlock(&frame_mutex);
     }
-}
-
-struct Line {
-    double slope;
-    double length;
-};
-
-Line getSlope(Point_<int> &leftInitial, Point_<int> &leftFinal, Point_<int> &rightInitial, Point_<int> &rightFinal) {
-
-    Point_<int> final;
-    final.y = (leftFinal.y + rightFinal.y) / 2;
-    final.x = (leftFinal.x + rightFinal.x) / 2;
-
-    Point_<int> initial;
-    initial.y = (leftInitial.y + rightInitial.y) / 2;
-    initial.x = (rightInitial.x + rightInitial.x) / 2;
-
-    double slope = (static_cast<double>(final.y) - static_cast<double>(initial.y)) /
-                   (static_cast<double>(final.x) - static_cast<double>(initial.x) + 0.00001);
-
-    Line line;
-    line.slope = slope;
-    line.length = sqrt(pow(final.y - initial.y, 2) + pow(initial.x - initial.x, 2));
-
-    return line;
 }
 
 int main(int argc, char **argv) {
@@ -250,7 +249,7 @@ int main(int argc, char **argv) {
     unsigned int del;
     speed = 60;
     ratio_ = 3;
-    del = 2500;
+    del = 250;
     if (argc > 1) {
         speed = atoi(argv[1]);
         ratio_ = atoi(argv[2]);
@@ -269,55 +268,49 @@ int main(int argc, char **argv) {
         return 1;
 
     }
-
-    initTrafficLightSignal();
+    //Taffic light thread initializations
     initTrafficLightThread();
 
     turn = STRAIGHT;
-    //while(1);
-    delay(15000);
+    delay(3000);
     int speedLeft, speedRight;
-    Line line;
     while (true) {
         //pthread_mutex_lock(&frame_mutex);
         pthread_mutex_lock(&motor_mutex);
-
-        line = getSlope(lane_left_buttom_frame.at(2), lane_left_buttom_frame.at(3), lane_right_buttom_frame.at(0),
-                        lane_right_buttom_frame.at(1));
 
         if (turn == Turn::STRAIGHT) {
             speedLeft = speed;
             speedRight = speed;
         } else {
-            line.slope = abs(line.slope);
             if (turn == Turn::LEFT) {
                 speedRight = speed;
-                if (line.slope <= 1) {
+                if (slope > 0.37) {
                     //speedLeft = speed * line.slope;
-                    speedLeft = speed / 5;
+                    speedLeft = speed / 2;
                 } else {
                     //speedLeft = speed * (1 - (1 / line.slope));
-                    speedLeft = speed / 2;
+                    speedLeft = speed / 3;
+                    speedRight = speed * 1.5;
                 }
             } else {
                 speedLeft = speed;
-                if (line.slope <= 1) {
+                if (slope > 0.37) {
                     //speedRight = speed * line.slope;
-                    speedRight = speed / 5;
+                    speedRight = speed / 2;
                 } else {
                     //speedRight = speed * (1 - (1 / line.slope));
-                    speedRight = speed / 2;
+                    speedRight = speed / 3;
+                    speedLeft = speed * 1.5;
                 }
             }
         }
 
-       if(trafficLightStatus != RED_LIGHT)
+        if (trafficLightStatus != RED_LIGHT)
             pwm_go_smooth(speedLeft, speedRight);
 
-        printf("\nspeed left: %d, speed right: %d, slope: %fl\n", speedLeft, speedRight, line.slope);
+        printf("\nspeed left: %d, speed right: %d, slope: %fl\n", speedLeft, speedRight, slope);
 
 
-        //printf("\nLeft: %lf\nRight : %lf", temp, temp2);
         pthread_mutex_unlock(&motor_mutex);
         //pthread_mutex_unlock(&frame_mutex);
         delay(100);

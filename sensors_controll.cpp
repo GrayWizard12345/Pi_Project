@@ -63,9 +63,9 @@ void left_interupt(int sig) {
     pthread_mutex_lock(&motor_mutex);
     pwmGoBack(speed);
     delay(150);
-    pwm_left_point_turn(speed);
+    pwm_left_point_turn(speed * 1.2);
     while (!get_left_lane);
-    delay(150);
+    delay(300);
     //pwmStop();
     pthread_mutex_unlock(&motor_mutex);
 
@@ -76,9 +76,9 @@ void right_interupt(int sig) {
     pthread_mutex_lock(&motor_mutex);
     pwmGoBack(speed);
     delay(150);
-    pwm_right_point_turn(speed);
+    pwm_right_point_turn(speed * 1.2);
     while (!get_right_lane);
-    delay(150);
+    delay(300);
     //pwmStop();
     pthread_mutex_unlock(&motor_mutex);
 }
@@ -130,7 +130,8 @@ void *IR_tracer_loop(void *) {
             raise(RIGHT_SIGNAL_NUM);
         }
         if (left_ir_val == WHITE && right_ir_val == WHITE) {
-            horizontal_line_counter++;
+//            horizontal_line_counter++;
+            delay(200);
         }
 
         //delay(10);

@@ -134,7 +134,7 @@ void *video_loop(void *) {
 */
 
         //LEFT BUTTOM FRAME HERE
-        img_left_buttom_mask = laneDetector.mask_left_buttom(img_edges);
+        img_left_buttom_mask = laneDetector.mask_left_bottom(img_edges);
         left_buttom_lines = laneDetector.houghLines(img_left_buttom_mask);
 
         if (!left_buttom_lines.empty()) {
@@ -148,7 +148,7 @@ void *video_loop(void *) {
             laneDetector.predictTurn(left_buttom_turn_predictor);
             //printf("\n%s", turnAsString[left_bottom_turn_predictor]);
             // Plot lane detection
-            //laneDetector.plotLane(img_left_buttom_mask, lane_left_buttom_frame, turnAsString[left_bottom_turn_predictor]);
+            //laneDetector.plotLane(img_left_buttom_mask, lane_left_bottom_frame, turnAsString[left_bottom_turn_predictor]);
 
 
         }

@@ -71,10 +71,9 @@ public:
     int left_frame_predictTurn(int &output, cv::Mat source);  // Determine if the lane is turning or not by calculating the position of the vanishing point
     int right_frame_predictTurn(int &output, cv::Mat source);
 
-    int plotLane(cv::Mat inputImage, std::vector<cv::Point> lane,
-                 std::string turn, std::string window_name);  // Plot the resultant lane and turn prediction in the frame.
+    int plotLane(cv::Mat inputImage, cv::Point init, cv::Point fin, std::string turn, std::string window_name);  // Plot the resultant lane and turn prediction in the frame.
 
-    cv::Mat mask_left_buttom(cv::Mat img_edges);
+    cv::Mat mask_left_bottom(cv::Mat img_edges);
 
     cv::Mat mask_right_bottom(cv::Mat img_edges);
 

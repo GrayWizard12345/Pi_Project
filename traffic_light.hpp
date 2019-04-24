@@ -16,7 +16,6 @@
  * @brief for indicating the status of traffic light
  */
 enum Status {
-    NON_TRAFFIC_LIGHT,
     RED_LIGHT,
     GREEN_LIGHT
 };
@@ -33,13 +32,3 @@ void *trafficLightLoop(void *);
  */
 int initTrafficLightThread();
 
-/**
- * @brief depending on the signal, it sets trafficLightStatus value
- * @param signum signal number either RED_TRAFFIC_LIGHT_SIGNAL or GREEN_TRAFFIC_LIGHT_SIGNAL
- */
-void trafficLightHandler(int signum);
-
-/**
- * @brief initializing the interrupt handler for traffic light signal
- */
-void initTrafficLightSignal();

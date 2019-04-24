@@ -100,18 +100,6 @@ cv::Mat LaneDetector::mask(cv::Mat img_edges) {
 
 cv::Mat LaneDetector::mask_right_bottom(cv::Mat img_edges) {
     cv::Mat output;
-    /*cv::Mat mask = cv::Mat::zeros(img_edges.size(), img_edges.type());
-    cv::Point pts[4] = {
-        cv::Point(1280 / 4 * 3, 720),
-        cv::Point(1280 / 4 * 3, 420),
-        cv::Point(1280, 420),
-        cv::Point(1280, 720)
-    };
-
-    // Create a binary polygon mask
-    cv::fillConvexPoly(mask, pts, 4, cv::Scalar(255, 0, 0));
-    // Multiply the edges image and the mask to get the output
-    cv::bitwise_and(img_edges, mask, output);*/
     cv::Rect rec(1280 / 2, 540, 1280 / 2, 960 - 540);
     output = img_edges(rec);
 
@@ -120,40 +108,14 @@ cv::Mat LaneDetector::mask_right_bottom(cv::Mat img_edges) {
 
 cv::Mat LaneDetector::mask_center_bottom(cv::Mat img_edges) {
     cv::Mat output;
-    /*cv::Mat mask = cv::Mat::zeros(img_edges.size(), img_edges.type());
-    cv::Point pts[4] = {
-        cv::Point(1280 / 4, 720),
-        cv::Point(1280 / 4, 420),
-        cv::Point(1280 / 4 * 3, 420),
-        cv::Point(1280 / 4 * 3, 720)
-    };
-
-    // Create a binary polygon mask
-    cv::fillConvexPoly(mask, pts, 4, cv::Scalar(255, 0, 0));
-    // Multiply the edges image and the mask to get the output
-    cv::bitwise_and(img_edges, mask, output);
-  */
     cv::Rect rec(1280 / 4, 540, 1280 / 2, 960 - 540);
     output = img_edges(rec);
     return output;
 }
 
-cv::Mat LaneDetector::mask_left_buttom(cv::Mat img_edges) {
+cv::Mat LaneDetector::mask_left_bottom(cv::Mat img_edges) {
     cv::Mat output;
-    /* cv::Mat mask = cv::Mat::zeros(img_edges.size(), img_edges.type());
-     cv::Point pts[4] = {
-         cv::Point(0, 720),
-         cv::Point(0, 420),
-         cv::Point(1280 / 4, 420),
-         cv::Point(1280 / 4, 720)
-     };
-
-     // Create a binary polygon mask
-     cv::fillConvexPoly(mask, pts, 4, cv::Scalar(255, 0, 0));
-     // Multiply the edges image and the mask to get the output
-     cv::bitwise_and(img_edges, mask, output);
-   */
-    cv::Rect rec(0, 420, 1280 / 2, 960 - 420);
+    cv::Rect rec(0, 540, 1280 / 2, 960 - 540);
     output = img_edges(rec);
     return output;
 }
@@ -404,7 +366,7 @@ LaneDetector::regression(std::vector<std::vector<cv::Vec4i> > left_right_lines, 
  *@return String that says if there is left or right turn or if the road is straight
  */
 int LaneDetector::left_frame_predictTurn(int &output, cv::Mat source) {
-    //int output = INVALID;
+
     double vanish_x;
     double thr_vp = 7;
 
@@ -413,7 +375,7 @@ int LaneDetector::left_frame_predictTurn(int &output, cv::Mat source) {
 //                                       (right_m - left_m));
 
 //    double y1 = left_m * img_center + left_b.y;
-    if (left_m > 0)
+    if (left_m >= 0)
     {
         output = Turn::LEFT;
     } else {
@@ -433,6 +395,7 @@ int LaneDetector::left_frame_predictTurn(int &output, cv::Mat source) {
 //    //printf("\nTurn in predict turn %d", output);
     return output;
 }
+
 int LaneDetector::right_frame_predictTurn(int &output, cv::Mat source) {
 //    double y1 = right_m * img_center + right_b.y;
     if (right_m > 0)
@@ -453,20 +416,16 @@ int LaneDetector::right_frame_predictTurn(int &output, cv::Mat source) {
 int LaneDetector::predictTurn_center_bottom_frame(int &output) {
     //int output = INVALID;
     double vanish_x;
-    double thr_vp = 20;
 
     // The vanishing point is the point where both lane boundary lines intersect
     vanish_x = static_cast<double>(((right_m * right_b.x) - (left_m * left_b.x) - right_b.y + left_b.y) /
                                    (right_m - left_m));
 
     // The vanishing points location determines where is the road turning
-    if (vanish_x < (img_center - thr_vp))
+    if (vanish_x <= img_center)
         output = Turn::LEFT;
-    else if (vanish_x > (img_center + thr_vp))
+    else
         output = Turn::RIGHT;
-    else if (vanish_x >= (img_center - thr_vp) && vanish_x <= (img_center + thr_vp))
-        output = Turn::STRAIGHT;
-    //printf("\nTurn in predict turn %d", output);
     return output;
 }
 
@@ -474,26 +433,19 @@ int LaneDetector::predictTurn_center_bottom_frame(int &output) {
 /**
  *@brief This function plots both sides of the lane, the turn prediction message and a transparent polygon that covers the area inside the lane boundaries
  *@param inputImage is the original captured frame
- *@param lane is the vector containing the information of both lines
+ *@param init is the vector containing the information of both lines
  *@param turn is the output string containing the turn information
  *@return The function returns a 0
  */
-int LaneDetector::plotLane(cv::Mat inputImage, std::vector<cv::Point> lane, std::string turn, std::string window_name) {
+int
+LaneDetector::plotLane(cv::Mat inputImage, cv::Point init, cv::Point fin, std::string turn, std::string window_name) {
     std::vector<cv::Point> poly_points;
     cv::Mat output;
 
     // Create the transparent polygon for a better visualization of the lane
-    inputImage.copyTo(output);
-    poly_points.push_back(lane[2]);
-    poly_points.push_back(lane[0]);
-    poly_points.push_back(lane[1]);
-    poly_points.push_back(lane[3]);
-    cv::fillConvexPoly(output, poly_points, cv::Scalar(0, 0, 255), CV_AA, 0);
-    cv::addWeighted(output, 0.3, inputImage, 1.0 - 0.3, 0, inputImage);
 
     // Plot both lines of the lane boundary
-    cv::line(inputImage, lane[0], lane[1], cv::Scalar(255, 255, 255), 5, CV_AA);
-    cv::line(inputImage, lane[2], lane[3], cv::Scalar(255, 255, 255), 5, CV_AA);
+    cv::line(inputImage, init, fin, cv::Scalar(255, 255, 255), 5, CV_AA);
 
     // Plot the turn message
     cv::putText(inputImage, turn, cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
