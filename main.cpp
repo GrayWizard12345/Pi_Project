@@ -19,6 +19,8 @@ using namespace cv;
 raspicam::RaspiCam_Cv capture;
 Mat src;
 Mat frame;
+Mat red_color_frame;
+Mat green_color_frame;
 
 VideoWriter *video;
 VideoWriter *video_edge;
@@ -88,6 +90,7 @@ int main(int argc, char **argv) {
     turn = STRAIGHT;
     delay(3000);
     int speedLeft, speedRight;
+    while(1);
     while (true) {
         //pthread_mutex_lock(&frame_mutex);
         pthread_mutex_lock(&motor_mutex);
@@ -226,16 +229,17 @@ void *video_loop(void *) {
 
             laneDetector.predictTurn(left_frame_turn);
 
-            laneDetector.plotLane(left_mask, lane_left_bottom_frame, turnAsString[left_frame_turn], "LEFT FRAME");
-
             if (left_frame_turn == LEFT)
                 left_slope = laneDetector.left_m;
             else
                 left_slope = laneDetector.right_m;
+
+            laneDetector.plotLane(left_mask, lane_left_bottom_frame, turnAsString[left_frame_turn].append(to_string(left_slope)), "LEFT FRAME");
         } else {
             left_frame_turn = LEFT;
             left_slope = -1;
         }
+
 
         //CENTER BOTTOM FRAME HERE
         center_mask = laneDetector.mask_center_bottom(src);
@@ -262,11 +266,13 @@ void *video_loop(void *) {
             lane_right_buttom_frame = laneDetector.regression(right_lines_separated, right_mask);
 
             laneDetector.predictTurn(right_frame_turn);
-            laneDetector.plotLane(right_mask, lane_right_buttom_frame, turnAsString[right_frame_turn], "RIGHT FRAME");
+
             if (left_frame_turn == LEFT)
                 right_slope = laneDetector.left_m;
             else
                 right_slope = laneDetector.right_m;
+
+            laneDetector.plotLane(right_mask, lane_right_buttom_frame, turnAsString[right_frame_turn].append(to_string(right_slope)), "RIGHT FRAME");
 
         } else {
             right_frame_turn = RIGHT;
@@ -282,8 +288,8 @@ void *video_loop(void *) {
         //video_mask->write(img_mask);
         video->write(src);
         //video_edge->write(img_edges);
-        //imshow("Video", img_edges);
-        //imshow("Video", center);
+        imshow("RED", red_color_frame);
+        imshow("GREEN", green_color_frame);
         //imshow("LEFT_BUTTOM", left_mask);
         //imshow("RIGHT_BUTTOM", right_mask);
 //        imshow("LEFT_BUTTOM_EDGED", left_mask);

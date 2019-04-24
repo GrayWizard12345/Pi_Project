@@ -20,6 +20,8 @@ enum Status {
     GREEN_LIGHT
 };
 extern cv::Mat frame;
+extern cv::Mat red_color_frame;
+extern cv::Mat green_color_frame;
 extern Status trafficLightStatus;
 /**
  *  @brief the thread function for red and green light detection
