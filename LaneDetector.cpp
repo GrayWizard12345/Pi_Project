@@ -425,11 +425,11 @@ void LaneDetector::predictTurn(int &output) {
     else
         output = RIGHT;
 
-    if (output == LEFT && !left_flag) {
+    if (output == LEFT && left_flag) {
         output = RIGHT;
     }
 
-    if (output == RIGHT && !right_flag) {
+    if (output == RIGHT && right_flag) {
         output = LEFT;
     }
 }
