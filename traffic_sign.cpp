@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
             int width = roi.cols / 2;
             int height = roi.rows;
 
-            Rect leftRec(0, 0, width - 1, height);
+            Rect leftRec(0, 0, width, height);
             Rect rightRec(width, 0, width, height);
 
             Mat left(roi, leftRec);
