@@ -22,11 +22,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *@brief The class will take RGB images as inputs and will output the same RGB image but
  *@brief with the plot of the detected lanes and the turn prediction.
  */
-#include <string>
-#include <vector>
-#include "opencv2/opencv.hpp"
+
 #include "LaneDetector.hpp"
-#include <string>
 
 // IMAGE BLURRING
 /**
@@ -154,6 +151,10 @@ std::vector<std::vector<cv::Vec4i> > LaneDetector::lineSeparation(std::vector<cv
     std::vector<cv::Vec4i> selected_lines;
     std::vector<cv::Vec4i> right_lines, left_lines;
 
+
+    right_flag = false;
+    left_flag = false;
+
     // Calculate the slope of all the detected lines
     for (auto i : lines) {
         ini = cv::Point(i[0], i[1]);
@@ -193,6 +194,7 @@ std::vector<std::vector<cv::Vec4i> > LaneDetector::lineSeparation(std::vector<cv
 
     return output;
 }
+
 std::vector<std::vector<cv::Vec4i>>
 LaneDetector::left_frame_lineSeparation(std::vector<cv::Vec4i> lines, cv::Mat img_edges) {
     std::vector<std::vector<cv::Vec4i>> output(2);
@@ -359,12 +361,6 @@ LaneDetector::regression(std::vector<std::vector<cv::Vec4i> > left_right_lines, 
 }
 
 
-// TURN PREDICTION
-/**
- *@brief Predict if the lane is turning left, right or if it is going straight
- *@brief It is done by seeing where the vanishing point is with respect to the center of the image
- *@return String that says if there is left or right turn or if the road is straight
- */
 int LaneDetector::left_frame_predictTurn(int &output, cv::Mat source) {
 
     double vanish_x;
@@ -375,8 +371,7 @@ int LaneDetector::left_frame_predictTurn(int &output, cv::Mat source) {
 //                                       (right_m - left_m));
 
 //    double y1 = left_m * img_center + left_b.y;
-    if (left_m >= 0)
-    {
+    if (left_m >= 0) {
         output = Turn::LEFT;
     } else {
         output = Turn::RIGHT;
@@ -398,8 +393,7 @@ int LaneDetector::left_frame_predictTurn(int &output, cv::Mat source) {
 
 int LaneDetector::right_frame_predictTurn(int &output, cv::Mat source) {
 //    double y1 = right_m * img_center + right_b.y;
-    if (right_m > 0)
-    {
+    if (right_m > 0) {
         output = Turn::LEFT;
     } else {
         output = Turn::RIGHT;
@@ -412,21 +406,32 @@ int LaneDetector::right_frame_predictTurn(int &output, cv::Mat source) {
     return output;
 }
 
-
-int LaneDetector::predictTurn_center_bottom_frame(int &output) {
-    //int output = INVALID;
+// TURN PREDICTION
+/**
+ *@brief Predict if the lane is turning left, right or if it is going straight
+ *@brief It is done by seeing where the vanishing point is with respect to the center of the image
+ *@return String that says if there is left or right turn or if the road is straight
+ */
+void LaneDetector::predictTurn(int &output) {
     double vanish_x;
 
     // The vanishing point is the point where both lane boundary lines intersect
-    vanish_x = static_cast<double>(((right_m * right_b.x) - (left_m * left_b.x) - right_b.y + left_b.y) /
-                                   (right_m - left_m));
+    vanish_x = ((right_m * right_b.x) - (left_m * left_b.x) - right_b.y + left_b.y) /
+               (right_m - left_m);
 
     // The vanishing points location determines where is the road turning
     if (vanish_x <= img_center)
-        output = Turn::LEFT;
+        output = LEFT;
     else
-        output = Turn::RIGHT;
-    return output;
+        output = RIGHT;
+
+    if (output == LEFT && !left_flag) {
+        output = RIGHT;
+    }
+
+    if (output == RIGHT && !right_flag) {
+        output = LEFT;
+    }
 }
 
 // PLOT RESULTS
@@ -437,26 +442,33 @@ int LaneDetector::predictTurn_center_bottom_frame(int &output) {
  *@param turn is the output string containing the turn information
  *@return The function returns a 0
  */
-int
-LaneDetector::plotLane(cv::Mat inputImage, cv::Point init, cv::Point fin, std::string turn, std::string window_name) {
+int LaneDetector::plotLane(cv::Mat inputImage, std::vector<cv::Point> lane, std::string turn, std::string frameName) {
     std::vector<cv::Point> poly_points;
     cv::Mat output;
 
     // Create the transparent polygon for a better visualization of the lane
+    inputImage.copyTo(output);
+    poly_points.push_back(lane[2]);
+    poly_points.push_back(lane[0]);
+    poly_points.push_back(lane[1]);
+    poly_points.push_back(lane[3]);
+    cv::fillConvexPoly(output, poly_points, cv::Scalar(0, 0, 255), CV_AA, 0);
+    cv::addWeighted(output, 0.3, inputImage, 1.0 - 0.3, 0, inputImage);
 
     // Plot both lines of the lane boundary
-    cv::line(inputImage, init, fin, cv::Scalar(255, 255, 255), 5, CV_AA);
+    cv::line(inputImage, lane[0], lane[1], cv::Scalar(0, 255, 255), 5, CV_AA);
+    cv::line(inputImage, lane[2], lane[3], cv::Scalar(0, 255, 255), 5, CV_AA);
 
     // Plot the turn message
     cv::putText(inputImage, turn, cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
 
     // Show the final output image
-    cv::namedWindow(window_name, CV_WINDOW_AUTOSIZE);
-    cv::imshow(window_name, inputImage);
+    cv::namedWindow(frameName, CV_WINDOW_AUTOSIZE);
+    cv::imshow(frameName, inputImage);
     return 0;
 }
 
-unsigned long LaneDetector::look_for_cross_walk(std::vector<cv::Vec4i> houghLines, cv::Mat &src){
+unsigned long LaneDetector::look_for_cross_walk(std::vector<cv::Vec4i> houghLines, cv::Mat &src) {
     cv::Point ini;
     cv::Point fini;
     double slope_thresh = 1.5;     //TODO changed from 0.3
@@ -480,7 +492,7 @@ unsigned long LaneDetector::look_for_cross_walk(std::vector<cv::Vec4i> houghLine
             //printf("%lf\n", slope);
             slopes.push_back(slope);
             selected_lines.push_back(i);
-            cv::line(src, ini, fini, cv::Scalar(245, 40, c+=20), 5, CV_AA);
+            cv::line(src, ini, fini, cv::Scalar(245, 40, c += 20), 5, CV_AA);
         }
         //printf("Num of lines: %lu\n" ,selected_lines.size());
         if (selected_lines.size() > 15)

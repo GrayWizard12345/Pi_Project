@@ -27,8 +27,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include<iostream>
 #include <string>
 #include <vector>
+#include <signal.h>
+#include "opencv2/opencv.hpp"
 #include "opencv2/opencv.hpp"
 
+#define ZEBRA_CROSSING_SIGNAL SIGRTMIN + 6
 
 enum Turn {
     INVALID = -1,
@@ -36,6 +39,7 @@ enum Turn {
     STRAIGHT,
     RIGHT
 };
+
 
 /**
  *@brief Definition of the LaneDetector class. It contains all the functions and variables depicted in the
@@ -63,15 +67,18 @@ public:
                                                         cv::Mat img_edges);  // Sprt detected lines by their slope into right and left lines
     std::vector<std::vector<cv::Vec4i>> left_frame_lineSeparation(std::vector<cv::Vec4i> lines,
                                                                   cv::Mat img_edges);
+
     std::vector<std::vector<cv::Vec4i>> right_frame_lineSeparation(std::vector<cv::Vec4i> lines,
                                                                    cv::Mat img_edges);
 
     std::vector<cv::Point> regression(std::vector<std::vector<cv::Vec4i> > left_right_lines,
                                       cv::Mat inputImage);  // Get only one line for each side of the lane
-    int left_frame_predictTurn(int &output, cv::Mat source);  // Determine if the lane is turning or not by calculating the position of the vanishing point
+    int left_frame_predictTurn(int &output,
+                               cv::Mat source);  // Determine if the lane is turning or not by calculating the position of the vanishing point
     int right_frame_predictTurn(int &output, cv::Mat source);
 
-    int plotLane(cv::Mat inputImage, cv::Point init, cv::Point fin, std::string turn, std::string window_name);  // Plot the resultant lane and turn prediction in the frame.
+    int plotLane(cv::Mat inputImage, std::vector<cv::Point> lane,
+                               std::string turn, std::string frameName);  // Plot the resultant lane and turn prediction in the frame.
 
     cv::Mat mask_left_bottom(cv::Mat img_edges);
 
@@ -79,7 +86,7 @@ public:
 
     cv::Mat mask_center_bottom(cv::Mat img_edges);
 
-    int predictTurn_center_bottom_frame(int &output);
+    void predictTurn(int &output);
 
     unsigned long look_for_cross_walk(std::vector<cv::Vec4i> houghLines, cv::Mat &src);
 };
