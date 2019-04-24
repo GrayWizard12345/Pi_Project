@@ -34,7 +34,6 @@ void *trafficLightLoop(void*) {
         //detect red circles
         HoughCircles(red_hue_image, circles, CV_HOUGH_GRADIENT, 1, red_hue_image.rows / 8, 110, 20, 0, 0);
 
-
         if ((circleCount = circles.size()) >= 1) {
             for (size_t current_circle = 0; current_circle < circles.size(); ++current_circle) {
                 Point center(round(circles[current_circle][0]), round(circles[current_circle][1]));
