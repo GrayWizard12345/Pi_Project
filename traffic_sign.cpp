@@ -33,18 +33,26 @@ int main(int argc, char **argv) {
         int radius = cvRound(circles[i][2]);
         circle(bgr_image, center, radius, Scalar(0, 255, 0), 2, 8, 0);
 
-        Rect box(center.x - radius, center.y - radius, radius * 2, radius * 2);
+        Rect circleBox(center.x - radius, center.y - radius, radius * 2, radius * 2);
         // check the box within the image plane
-        if (0 <= box.x
-            && 0 <= box.width
-            && box.x + box.width <= bgr_image.cols
-            && 0 <= box.y
-            && 0 <= box.height
-            && box.y + box.height <= bgr_image.rows) {
+        if (0 <= circleBox.x
+            && 0 <= circleBox.width
+            && circleBox.x + circleBox.width <= bgr_image.cols
+            && 0 <= circleBox.y
+            && 0 <= circleBox.height
+            && circleBox.y + circleBox.height <= bgr_image.rows) {
             //the area is within the image
 
             // obtain the image ROI:
-            Mat roi(blue_hue_range, box);
+            Mat circleROI(blue_hue_range, circleBox);
+
+            int interval = 10;
+            Rect roiBox(0, circleROI.rows / 2 + interval, circleROI.cols, interval * 2);
+
+            printf("circleROI %d %d\n", circleROI.cols, circleROI.rows);
+            printf("boxROI %d %d %d %d\n", roiBox.x, roiBox.y, roiBox.width, roiBox.height);
+
+            Mat roi(circleROI, roiBox);
 
             int width = roi.cols / 2;
             int height = roi.rows;
@@ -52,18 +60,33 @@ int main(int argc, char **argv) {
             Rect leftRec(0, 0, width, height);
             Rect rightRec(width, 0, width, height);
 
-            Mat left(roi, leftRec);
-            Mat right(roi, rightRec);
+            Mat leftFrame(roi, leftRec);
+            Mat rightFrame(roi, rightRec);
 
-            namedWindow("mask " + to_string(i), WINDOW_AUTOSIZE);
-            imshow("mask " + to_string(i), roi);
             namedWindow("left mask " + to_string(i), WINDOW_AUTOSIZE);
-            imshow("left mask " + to_string(i), left);
+            imshow("left mask " + to_string(i), leftFrame);
             namedWindow("right mask " + to_string(i), WINDOW_AUTOSIZE);
-            imshow("right mask " + to_string(i), right);
+            imshow("right mask " + to_string(i), rightFrame);
+            namedWindow("mask roi " + to_string(i), WINDOW_FULLSCREEN);
+            imshow("mask roi" + to_string(i), roi);
 
+            namedWindow("mask " + to_string(i), WINDOW_FULLSCREEN);
+            imshow("mask " + to_string(i), circleROI);
 
-            //TODO use countNonZero()
+            int leftBlackNum = countNonZero(leftFrame);
+            int rightBlackNum = countNonZero(rightFrame);
+
+            //TODO maybe clash with circle traffic sign
+            if (abs(leftBlackNum - rightBlackNum) > 10) {
+                //it is left/right turn traffic sign
+                if (leftBlackNum < rightBlackNum){
+                    printf("%d mask - turn left", i);
+                }else{
+                    printf("%d mask - turn right", i);
+                }
+            }
+
+            printf("%d mask \t %d - %d\n", i, leftBlackNum, rightBlackNum);
         }
     }
 
