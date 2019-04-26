@@ -52,9 +52,11 @@ cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
     //cv::Point anchor;
 
     // Convert image from RGB to gray
-    cv::cvtColor(img_noise, output, cv::COLOR_RGB2GRAY);
+    cv::cvtColor(img_noise, output, cv::COLOR_BGR2HSV);
+    cv::inRange(output, cv::Scalar(10, 150, 150), cv::Scalar(40, 255, 255), img_noise);
+//    cv::cvtColor(img_noise, output, cv::COLOR_RGB2GRAY);
     // Binarize gray image
-    //cv::threshold(output, output, 140, 255, cv::THRESH_BINARY);
+    cv::threshold(output, output, 140, 255, cv::THRESH_BINARY);
 
     // Create the kernel [-1 0 1]
     // This kernel is based on the one found in the

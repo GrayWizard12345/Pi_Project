@@ -195,7 +195,7 @@ void *video_loop(void *) {
             laneDetector.predictTurn(right_buttom_turn_predictor);
             //printf(" - %s", turnAsString[right_bottom_turn_predictor]);
             // Plot lane detection
-            //laneDetector.plotLane(img_right_buttom_mask, lane_right_buttom_frame, turnAsString[turn]);
+            //laneDetector.plotLane(img_right_buttom_mask, lane_right_bottom_frame, turnAsString[turn]);
 
 
         }
