@@ -28,6 +28,8 @@ void *trafficLightLoop(void*) {
         Mat red_hue_image;
         //use hue values from the both ranges (masks)
         addWeighted(redLowerMask, 1.0, redHigherMask, 1.0, 0.0, red_hue_image);
+        erode(red_hue_image, red_hue_image, getStructuringElement(MORPH_ELLIPSE, Size( 9, 9)));
+        dilate(red_hue_image, red_hue_image, getStructuringElement(MORPH_ELLIPSE, Size( 3, 3)));
         GaussianBlur(red_hue_image, red_hue_image, cv::Size(9, 9), 2, 2);
 
         vector<Vec3f> circles;
@@ -42,21 +44,24 @@ void *trafficLightLoop(void*) {
                 //draw circle on the background
                 circle(red_hue_image, center, radius, Scalar(0, 255, 0), 5);
             }
-            printf("Red light detected - circles: %d \n", circleCount);
+            printf("\nRed light detected - circles: %d \n", circleCount);
             trafficLightStatus = RED_LIGHT;
         }
         red_color_frame = red_hue_image;
 
         Mat hsv_green;
         cvtColor(rightTopBgr, hsv_green, COLOR_BGR2HSV);
-        Mat greenLowerMask, greenHigherMask;
-        inRange(hsv_green, Scalar(38, 0, 0), Scalar(60, 255, 255), greenLowerMask);
-        inRange(hsv_green, Scalar(125, 22, 29), Scalar(125, 100, 74), greenHigherMask);
-        Mat green_hue_image;
-        addWeighted(greenLowerMask, 1.0, greenHigherMask, 1.0, 0.0, green_hue_image);
-        green_color_frame = green_hue_image;
-        GaussianBlur(green_hue_image, green_hue_image, Size(9, 9), 2, 2);
-        HoughCircles(green_hue_image, circles, CV_HOUGH_GRADIENT, 1, green_hue_image.rows / 8, 110, 20, 0, 0);
+        Mat green_mask;
+        inRange(hsv_green, Scalar(45, 100, 100), Scalar(80, 255, 255), green_mask);
+
+        //erode(greenHigherMask, green_hue_image, getStructuringElement(MORPH_ELLIPSE, Size( 9, 9)));
+        green_color_frame = green_mask;
+        threshold(green_mask, green_mask, 128, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+        GaussianBlur(green_mask, green_mask, Size(9, 9), 2, 2);
+//        erode(green_mask, green_mask, getStructuringElement(MORPH_ELLIPSE, Size( 9, 9)));
+        dilate(green_mask, green_mask, getStructuringElement(MORPH_ELLIPSE, Size( 15, 15)));
+        HoughCircles(green_mask, circles, CV_HOUGH_GRADIENT, 1, green_mask.rows / 8, 110, 10, 0, 50);
+
 
 
         if ((circleCount = circles.size()) > 1) {
@@ -65,9 +70,9 @@ void *trafficLightLoop(void*) {
                 int radius = round(circles[current_circle][2]);
 
                 //draw circle on the background
-                circle(green_hue_image, center, radius, Scalar(0, 0, 255), 5);
+                circle(green_mask, center, radius, Scalar(0, 0, 255), 5);
             }
-            printf("Green light detected - circles: %d \n", circleCount);
+            printf("\nGreen light detected - circles: %d \n", circleCount);
             trafficLightStatus = GREEN_LIGHT;
         }
 

@@ -61,11 +61,11 @@ void left_interupt(int sig) {
 
     printf("\nleft_interupt called!");
     pthread_mutex_lock(&motor_mutex);
-    pwmGoBack(speed);
-    delay(150);
+//    pwmGoBack(speed);
+//    delay(150);
     pwm_left_point_turn(speed * 1.2);
     while (!get_left_lane);
-    delay(300);
+    delay(175);
     //pwmStop();
     pthread_mutex_unlock(&motor_mutex);
 
@@ -74,11 +74,11 @@ void left_interupt(int sig) {
 void right_interupt(int sig) {
     printf("\nright_interupt called!");
     pthread_mutex_lock(&motor_mutex);
-    pwmGoBack(speed);
-    delay(150);
+//    pwmGoBack(speed);
+//    delay(150);
     pwm_right_point_turn(speed * 1.2);
     while (!get_right_lane);
-    delay(300);
+    delay(175);
     //pwmStop();
     pthread_mutex_unlock(&motor_mutex);
 }
