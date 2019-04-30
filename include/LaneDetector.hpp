@@ -86,7 +86,7 @@ public:
 
     cv::Mat mask_center_bottom(cv::Mat img_edges);
 
-    void predictTurn(int &output);
+    int predictTurn(int &output);
 
     unsigned long look_for_cross_walk(cv::Mat &src);
 };

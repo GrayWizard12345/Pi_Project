@@ -94,8 +94,8 @@ cv::Mat LaneDetector::mask(cv::Mat img_edges) {
     cv::Mat mask = cv::Mat::zeros(img_edges.size(), img_edges.type());
     cv::Point pts[4] = {
             cv::Point(0, 960),
-            cv::Point(0, 420),
-            cv::Point(1280, 420),
+            cv::Point(0, 960 - 540),
+            cv::Point(1280, 960 - 540),
             cv::Point(1280, 960)
     };
 
@@ -207,95 +207,6 @@ std::vector<std::vector<cv::Vec4i> > LaneDetector::lineSeparation(std::vector<cv
     return output;
 }
 
-std::vector<std::vector<cv::Vec4i>>
-LaneDetector::left_frame_lineSeparation(std::vector<cv::Vec4i> lines, cv::Mat img_edges) {
-    std::vector<std::vector<cv::Vec4i>> output(2);
-    size_t j = 0;
-    cv::Point ini;
-    cv::Point fini;
-    double slope_thresh = 0.17;     //TODO changed from 0.3
-    std::vector<double> slopes;
-    std::vector<cv::Vec4i> selected_lines;
-
-    // Calculate the slope of all the detected lines
-    for (auto i : lines) {
-        ini = cv::Point(i[0], i[1]);
-        fini = cv::Point(i[2], i[3]);
-
-        // Basic algebra: slope = (y1 - y0)/(x1 - x0)
-        double slope = (static_cast<double>(fini.y) - static_cast<double>(ini.y)) /
-                       (static_cast<double>(fini.x) - static_cast<double>(ini.x) + 0.00001);
-
-        // If the slope is too horizontal, discard the line
-        // If not, save them  and their respective slope
-        if (std::abs(slope) > slope_thresh) {
-            slopes.push_back(slope);
-            selected_lines.push_back(i);
-        }
-    }
-
-    // Split the lines into right and left lines
-    img_center = static_cast<double>((img_edges.cols / 2));
-    while (j < selected_lines.size()) {
-        ini = cv::Point(selected_lines[j][0], selected_lines[j][1]);
-        fini = cv::Point(selected_lines[j][2], selected_lines[j][3]);
-
-        // Condition to classify line as left side or right side
-        if (slopes[j] < 0) {
-            output[1].push_back(selected_lines[j]);
-            left_flag = true;
-        }
-        j++;
-    }
-
-    return output;
-}
-
-std::vector<std::vector<cv::Vec4i>>
-LaneDetector::right_frame_lineSeparation(std::vector<cv::Vec4i> lines, cv::Mat img_edges) {
-    std::vector<std::vector<cv::Vec4i>> output(2);
-    size_t j = 0;
-    cv::Point ini;
-    cv::Point fini;
-    double slope_thresh = 0.17;     //TODO changed from 0.3
-    std::vector<double> slopes;
-    std::vector<cv::Vec4i> selected_lines;
-
-    // Calculate the slope of all the detected lines
-    for (auto i : lines) {
-        ini = cv::Point(i[0], i[1]);
-        fini = cv::Point(i[2], i[3]);
-
-        // Basic algebra: slope = (y1 - y0)/(x1 - x0)
-        double slope = (static_cast<double>(fini.y) - static_cast<double>(ini.y)) /
-                       (static_cast<double>(fini.x) - static_cast<double>(ini.x) + 0.00001);
-
-        // If the slope is too horizontal, discard the line
-        // If not, save them  and their respective slope
-        if (std::abs(slope) > slope_thresh) {
-            slopes.push_back(slope);
-            selected_lines.push_back(i);
-        }
-    }
-
-    // Split the lines into right and left lines
-    img_center = static_cast<double>((img_edges.cols / 2));
-    while (j < selected_lines.size()) {
-        ini = cv::Point(selected_lines[j][0], selected_lines[j][1]);
-        fini = cv::Point(selected_lines[j][2], selected_lines[j][3]);
-
-        // Condition to classify line as left side or right side
-        if (slopes[j] > 0) {
-            output[0].push_back(selected_lines[j]);
-            right_flag = true;
-        }
-        j++;
-    }
-
-    return output;
-}
-
-
 
 // REGRESSION FOR LEFT AND RIGHT LINES
 /**
@@ -373,77 +284,27 @@ LaneDetector::regression(std::vector<std::vector<cv::Vec4i> > left_right_lines, 
 }
 
 
-int LaneDetector::left_frame_predictTurn(int &output, cv::Mat source) {
-
-    double vanish_x;
-    double thr_vp = 7;
-
-//    // The vanishing point is the point where both lane boundary lines intersect
-//    vanish_x = static_cast<double>(((right_m * right_b.x) - (left_m * left_b.x) - right_b.y + left_b.y) /
-//                                       (right_m - left_m));
-
-//    double y1 = left_m * img_center + left_b.y;
-    if (left_m >= 0) {
-        output = Turn::LEFT;
-    } else {
-        output = Turn::RIGHT;
-    }
-//    if ((source.rows / 2) - y1 - 20 > y1)
-//    {
-//        output = Turn::STRAIGHT;
-//    }
-//    // The vanishing points location determines where is the road turning
-//    if (vanish_x < (img_center - thr_vp))
-//        output = Turn::LEFT;
-//    else if (vanish_x > (img_center + thr_vp))
-//        output = Turn::RIGHT;
-//    else if (vanish_x >= (img_center - thr_vp) && vanish_x <= (img_center + thr_vp))
-//        output = Turn::STRAIGHT;
-//    //printf("\nTurn in predict turn %d", output);
-    return output;
-}
-
-int LaneDetector::right_frame_predictTurn(int &output, cv::Mat source) {
-//    double y1 = right_m * img_center + right_b.y;
-    if (right_m > 0) {
-        output = Turn::LEFT;
-    } else {
-        output = Turn::RIGHT;
-    }
-//    if ((source.rows / 2) - y1 - 20> y1)
-//    {
-//        output = Turn::STRAIGHT;
-//    }
-
-    return output;
-}
-
 // TURN PREDICTION
 /**
  *@brief Predict if the lane is turning left, right or if it is going straight
  *@brief It is done by seeing where the vanishing point is with respect to the center of the image
  *@return String that says if there is left or right turn or if the road is straight
  */
-void LaneDetector::predictTurn(int &output) {
+int LaneDetector::predictTurn(int &output) {
     double vanish_x;
-    int threashold = 20;
+    double thr_vp = 25;
+
     // The vanishing point is the point where both lane boundary lines intersect
-    vanish_x = ((right_m * right_b.x) - (left_m * left_b.x) - right_b.y + left_b.y) /
-               (right_m - left_m);
+    vanish_x = static_cast<double>(((right_m*right_b.x) - (left_m*left_b.x) - right_b.y + left_b.y) / (right_m - left_m));
 
     // The vanishing points location determines where is the road turning
-    if (vanish_x <= img_center)
+    if (vanish_x < (img_center - thr_vp))
         output = LEFT;
-    else
+    else if (vanish_x > (img_center + thr_vp))
         output = RIGHT;
+    else if (vanish_x >= (img_center - thr_vp) && vanish_x <= (img_center + thr_vp))
+        output = STRAIGHT;
 
-    if (output == LEFT && left_flag) {
-        output = RIGHT;
-    }
-
-    if (output == RIGHT && right_flag) {
-        output = LEFT;
-    }
 }
 
 // PLOT RESULTS

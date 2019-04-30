@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include "../include/LaneDetector.hpp"
 #include "../include/traffic_light.hpp"
+#include "../include/config_reader.h"
 #include <cmath>
 
 using namespace std;
@@ -25,13 +26,11 @@ Mat green_color_frame;
 VideoWriter *video;
 
 static int turn;
-static int left_frame_turn;
-static int right_frame_turn;
-static int center_bottom_turn_predictor;
-
 Status trafficLightStatus = GREEN_LIGHT;
 
 string turnAsString[] = {"L", "S", "R"};
+
+std::map vars<std::string, std::string>;
 
 int speed;
 int ratio_;
@@ -39,11 +38,9 @@ int ratio_;
 LaneDetector laneDetector;
 pthread_mutex_t frame_mutex;
 
-std::vector<cv::Point> lane_left_bottom_frame;
-std::vector<cv::Point> lane_right_bottom_frame;
-std::vector<cv::Point> lane_center_buttom_frame;
-
 double slope;
+
+void init_vars();
 
 void signalHandler(int signum);
 
@@ -57,19 +54,16 @@ int main(int argc, char **argv) {
     signal(SIGUSR2, right_interupt);
     signal(SIGRTMIN + 5, obstacle_signal_handler);
 //    signal(ZEBRA_CROSSING_SIGNAL, crosswalk_handler);
-    /* this variable is our reference to the second thread */
+
+
     pthread_t video_thread;
 
-    unsigned int del;
     speed = 80;
     ratio_ = 3;
-    del = 250;
-    if (argc > 1) {
-        speed = atoi(argv[1]);
-        ratio_ = atoi(argv[2]);
-        del = static_cast<unsigned int>(atoi(argv[3]));
-    }
+    init_vars();
+
     printf("Speed %d ", speed);
+
     if (wiringPiSetup() == -1)
         return 0;
     pwmInitDCMotor();
@@ -87,7 +81,7 @@ int main(int argc, char **argv) {
         return 1;
 
     }
-    //Taffic light thread initializations
+    //Traffic light thread initializations
     initTrafficLightThread();
 
     turn = STRAIGHT;
@@ -106,8 +100,7 @@ int main(int argc, char **argv) {
             speedRight = speed / 4;
             speedLeft = speed;
         }
-
-        //pthread_mutex_lock(&frame_mutex);
+        
         if (trafficLightStatus != RED_LIGHT) {
 //            pwm_go_smooth(speedLeft, speedRight);
         }
@@ -160,23 +153,6 @@ void *video_loop(void *) {
     std::vector<std::vector<cv::Vec4i> > left_right_lines;
     std::vector<cv::Point> lane;
 
-    cv::Mat left_mask;
-    cv::Mat left_edged;
-
-    cv::Mat right_mask;
-    cv::Mat right_edged;
-
-    cv::Mat center_mask;
-    cv::Mat center_edged;
-
-    std::vector<cv::Vec4i> left_lines;
-    std::vector<cv::Vec4i> right_lines;
-    std::vector<cv::Vec4i> center_bottom_lines;
-
-    std::vector<std::vector<cv::Vec4i> > left_lines_separated;
-    std::vector<std::vector<cv::Vec4i> > right_lines_separated;
-    std::vector<std::vector<cv::Vec4i> > left_right_lines_center_buttom_frame;
-
     if (pthread_mutex_init(&frame_mutex, nullptr) == -1) {
         printf("\nCannot create mutex!\n");
         return nullptr;
@@ -195,83 +171,38 @@ void *video_loop(void *) {
     double left_slope;
     double right_slope;
     video = new VideoWriter("outcpp.avi", CV_FOURCC('M', 'J', 'P', 'G'), 7, Size(width, height));
-    //video_edge = new VideoWriter("edge.avi",CV_FOURCC('M','J','P','G'),10, Size(img_edges.size().width, img_edges.size().height));
-    //video_mask = new VideoWriter("mask.avi",CV_FOURCC('M','J','P','G'),10, Size(img_mask.size().width, img_mask.size().height));
-
+   
     while (true) {
 
         pthread_mutex_lock(&frame_mutex);
         capture.grab(); //grab the scene using raspicam
         capture.retrieve(src); // retrieve the captured scene as an image and store it in matrix container
         frame = src;
+        
+        img_mask = laneDetector.mask(src);
+        img_edges = laneDetector.edgeDetector(img_mask);
+        lines = laneDetector.houghLines(img_edges);
 
-        //LEFT BOTTOM FRAME
-        left_mask = laneDetector.mask_left_bottom(src);
-        left_edged = laneDetector.edgeDetector(left_mask);
-        left_lines = laneDetector.houghLines(left_edged);
+        if (!lines.empty()) {
+            left_right_lines = laneDetector.lineSeparation(lines, img_edges);
 
-        if (!left_lines.empty()) {
-            left_lines_separated = laneDetector.lineSeparation(left_lines, left_edged);
+            lane = laneDetector.regression(left_right_lines, img_mask);
 
-            lane_left_bottom_frame = laneDetector.regression(left_lines_separated, left_mask);
+            int degree = laneDetector.predictTurn(turn);
 
-            laneDetector.predictTurn(left_frame_turn);
-
-            if (left_frame_turn == LEFT)
-                left_slope = laneDetector.right_m;
-            else
-                left_slope = laneDetector.left_m;
-
-            //laneDetector.plotLane(left_mask, lane_left_bottom_frame, turnAsString[left_frame_turn].append(to_string(left_slope)), "LEFT FRAME");
-        } else {
-            left_frame_turn = LEFT;
-            left_slope = -1;
-        }
-
-
-        //CENTER BOTTOM FRAME HERE
-        center_mask = laneDetector.mask_center_bottom(src);
-//        center_edged = laneDetector.edgeDetector(center_mask);
-        //center_bottom_lines = laneDetector.houghLines(center_edged);
-
-        Mat center = center_mask.clone();
-
-        unsigned long zebra_lines = laneDetector.look_for_cross_walk(center);
-        //if (zebra_lines > 15)
-//                raise(ZEBRA_CROSSING_SIGNAL);
-
-
-        //RIGHT BOTTOM FRAME HERE
-        right_mask = laneDetector.mask_right_bottom(src);
-        right_edged = laneDetector.edgeDetector(right_mask);
-        right_lines = laneDetector.houghLines(right_edged);
-
-        if (!right_lines.empty()) {
-            right_lines_separated = laneDetector.lineSeparation(right_lines, right_edged);
-
-            lane_right_bottom_frame = laneDetector.regression(right_lines_separated, right_mask);
-
-            laneDetector.predictTurn(right_frame_turn);
-
-            if (right_frame_turn == RIGHT)
-                right_slope = laneDetector.left_m;
-            else
-                right_slope = laneDetector.right_m;
-
-            //laneDetector.plotLane(right_mask, lane_right_bottom_frame, turnAsString[right_frame_turn].append(to_string(right_slope)), "RIGHT FRAME");
+            laneDetector.plotLane(img_mask, lane, turnAsString[turn].append(to_string(right_slope)), "Lane Detection");
 
         } else {
-            right_frame_turn = RIGHT;
-            right_slope = 1;
+            turn = STRAIGHT;
         }
-
-        slope = (abs(left_slope) + abs(right_slope)) / 2;
-
-        turn = (left_frame_turn + right_frame_turn) / 2;
-
-        int rows = max(right_edged.rows, left_edged.rows);
-        int cols = left_edged.cols + right_edged.cols;
-
+//
+//        slope = (abs(left_slope) + abs(right_slope)) / 2;
+//
+//        turn = (left_frame_turn + right_frame_turn) / 2;
+//
+//        int rows = max(right_edged.rows, left_edged.rows);
+//        int cols = left_edged.cols + right_edged.cols;
+//
 //        Mat3b res(rows, cols, Vec3b(0,0,0));
 //
 //        left_edged.copyTo(res(Rect(0, 0, left_edged.cols, left_edged.rows)));
@@ -288,14 +219,6 @@ void *video_loop(void *) {
         //video_mask->write(img_mask);
         video->write(src);
 //        imshow("Road", res);
-        //video_edge->write(img_edges);
-        //imshow("RED", red_color_frame);
-        //imshow("GREEN", green_color_frame);
-        imshow("LEFT_BUTTOM", left_edged);
-        imshow("RIGHT_BUTTOM", right_edged);
-//        imshow("LEFT_BUTTOM_EDGED", left_mask);
-//        imshow("RIGHT_BUTTOM_EDGED", right_mask);
-//        //imshow("traffic_light", traffic_light);
 
 
         //printf("\n%s", turnAsString[turn]);
@@ -303,4 +226,10 @@ void *video_loop(void *) {
         waitKey(1);
         pthread_mutex_unlock(&frame_mutex);
     }
+}
+
+void init_vars()
+{
+    speed = vars["SPEED"];
+    ratio_ = vars["RATION"];
 }

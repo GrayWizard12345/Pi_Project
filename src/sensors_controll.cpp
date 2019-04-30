@@ -35,7 +35,6 @@ extern int speed;
 
 int left_ir_val;
 int right_ir_val;
-int horizontal_line_counter = 0;
 int distance = 0;
 
 pthread_mutex_t motor_mutex;
@@ -119,8 +118,7 @@ void *IR_tracer_loop(void *) {
         }
         pthread_join(left_ir_thread, NULL);
         pthread_join(right_ir_thread, NULL);
-        //printf("\nRight IR: %d,  Left ir: %d", left_ir_val, right_ir_val);
-        //printf("\nDistance to obstacle: %d", distance);
+
         if (left_ir_val == BLACK && right_ir_val == WHITE) {
             raise(LEFT_SIGNAL_NUM);
         }
