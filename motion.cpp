@@ -17,6 +17,7 @@
   * Expected GNU v2.0 licence release in 2020
   */
 
+#include <cstdio>
 #include "motion.hpp"
 
 void initDCMotor() {
@@ -99,7 +100,7 @@ void pwmStop() {
     softPwmWrite(IN2_PIN, MIN_SPEED);
     softPwmWrite(IN3_PIN, MIN_SPEED);
     softPwmWrite(IN4_PIN, MIN_SPEED);
-    //printf("Pwm Stop\n");
+    printf("Pwm Stop\n");
 }
 
 // Smooth turn is achieved with difference in speed in left and right motors
@@ -108,7 +109,7 @@ void pwm_right_smooth_turn(int speed, int ratio) {
     softPwmWrite(IN2_PIN, MIN_SPEED);
     softPwmWrite(IN3_PIN, speed / ratio);
     softPwmWrite(IN4_PIN, MIN_SPEED);
-    //printf("PWM go_1\n");
+    printf("PWM go_1\n");
 }
 
 void pwm_left_smooth_turn(int speed, int ratio) {
@@ -116,7 +117,7 @@ void pwm_left_smooth_turn(int speed, int ratio) {
     softPwmWrite(IN2_PIN, MIN_SPEED);
     softPwmWrite(IN3_PIN, speed);
     softPwmWrite(IN4_PIN, MIN_SPEED);
-    //printf("PWM go_1\n");
+    printf("PWM go_1\n");
 }
 
 void pwm_left_point_turn(int speed) {
@@ -124,7 +125,7 @@ void pwm_left_point_turn(int speed) {
     softPwmWrite(IN2_PIN, speed);
     softPwmWrite(IN3_PIN, speed);
     softPwmWrite(IN4_PIN, MIN_SPEED);
-    //printf("PWM point left turn\n");
+    printf("PWM point left turn\n");
 }
 
 void pwm_right_point_turn(int speed) {
@@ -161,4 +162,5 @@ void pwm_go_smooth(int speedLeft, int speedRight) {
     softPwmWrite(IN2_PIN, MIN_SPEED);
     softPwmWrite(IN3_PIN, speedRight);
     softPwmWrite(IN4_PIN, MIN_SPEED);
+    printf("\n\t----Go called!----");
 }

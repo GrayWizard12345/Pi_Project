@@ -159,7 +159,7 @@ void *video_loop(void *) {
         Mat center = img_center_buttom_mask.clone();
         if (!center_buttom_lines.empty()) {
             // Separate lines into left and right lines
-            unsigned  long zebra_lines = laneDetector.look_for_cross_walk(center_buttom_lines, center);
+            unsigned  long zebra_lines = laneDetector.look_for_cross_walk(center);
             if (zebra_lines > 15)
                 raise(SIGRTMIN + 6);
             left_right_lines_center_buttom_frame = laneDetector.lineSeparation(center_buttom_lines,

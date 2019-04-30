@@ -88,5 +88,5 @@ public:
 
     void predictTurn(int &output);
 
-    unsigned long look_for_cross_walk(std::vector<cv::Vec4i> houghLines, cv::Mat &src);
+    unsigned long look_for_cross_walk(cv::Mat &src);
 };
