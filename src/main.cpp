@@ -7,8 +7,8 @@
 #include "opencv2/imgproc.hpp"
 #include <raspicam/raspicam_cv.h>
 #include <pthread.h>
-#include "LaneDetector.hpp"
-#include "traffic_light.hpp"
+#include "../include/LaneDetector.hpp"
+#include "../include/traffic_light.hpp"
 #include <cmath>
 
 using namespace std;
@@ -23,8 +23,7 @@ Mat red_color_frame;
 Mat green_color_frame;
 
 VideoWriter *video;
-VideoWriter *video_edge;
-VideoWriter *video_mask;
+
 static int turn;
 static int left_frame_turn;
 static int right_frame_turn;

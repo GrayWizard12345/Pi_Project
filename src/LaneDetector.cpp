@@ -23,7 +23,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *@brief with the plot of the detected lanes and the turn prediction.
  */
 
-#include "LaneDetector.hpp"
+#include "../include/LaneDetector.hpp"
 using namespace cv;
 using namespace std;
 // IMAGE BLURRING
@@ -78,7 +78,7 @@ cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
 
 
     // Filter the binary image to obtain the edges
-    cv::Canny(output, output, lowThreshold, lowThreshold * ratio, kernel_size);
+//    cv::Canny(output, output, lowThreshold, lowThreshold * ratio, kernel_size);
     //printf("\nEdge detector: %d -- %d", output.cols, output.rows);
     return output;
 }

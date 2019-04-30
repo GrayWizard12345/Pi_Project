@@ -1,4 +1,4 @@
-#include "motion.hpp"
+#include "../include/motion.hpp"
 #include <string.h>
 #include <stdio.h>
 #include<stdlib.h>

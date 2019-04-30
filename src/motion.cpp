@@ -18,7 +18,7 @@
   */
 
 #include <cstdio>
-#include "motion.hpp"
+#include "../include/motion.hpp"
 
 void initDCMotor() {
     digitalWrite(IN1_PIN, HIGH);
