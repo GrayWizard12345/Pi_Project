@@ -58,14 +58,14 @@ cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
 
     // Convert image from RGB to gray
     cv::cvtColor(img_noise, output, cv::COLOR_BGR2HSV);
-    cv::inRange(output, cv::Scalar(20, 100, 100), cv::Scalar(45, 255, 255), output);
+    cv::inRange(output, cv::Scalar(10, 150, 150), cv::Scalar(40, 255, 255), output);
 //  (20, 100, 100)(20, 50, 50)
 //    cv::cvtColor(img_noise, output, cv::COLOR_RGB2GRAY);
     // Binarize gray image
     //cv::threshold(output, output, 140, 255, cv::THRESH_BINARY);
 
-    cv::erode(output, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size( 9, 9)));
-    cv::dilate(output, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size( 3, 3)));
+//    cv::dilate(output, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size( 3, 3)));
+//    cv::erode(output, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size( 9, 9)));
 
     // Create the kernel [-1 0 1]
     // This kernel is based on the one found in the
@@ -78,9 +78,8 @@ cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
 
 
     // Filter the binary image to obtain the edges
-//    cv::Canny(output, output, lowThreshold, lowThreshold * ratio, kernel_size);
+    cv::Canny(output, output, lowThreshold, lowThreshold * ratio, kernel_size);
     //printf("\nEdge detector: %d -- %d", output.cols, output.rows);
-    imshow("edges", output);
     return output;
 }
 
@@ -92,44 +91,12 @@ cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
  */
 cv::Mat LaneDetector::mask(cv::Mat img_edges) {
     cv::Mat output;
-    cv::Mat mask = cv::Mat::zeros(img_edges.size(), img_edges.type());
-    cv::Point pts[4] = {
-            cv::Point(0, 960),
-            cv::Point(0, 960 - 540),
-            cv::Point(1280, 960 - 540),
-            cv::Point(1280, 960)
-    };
+    cv::Rect rect(0, 960 - 540, 1280, 540);
 
-    // Create a binary polygon mask
-    cv::fillConvexPoly(mask, pts, 4, cv::Scalar(255, 0, 0));
-    // Multiply the edges image and the mask to get the output
-    cv::bitwise_and(img_edges, mask, output);
+    output = img_edges(rect);
 
     return output;
 }
-
-cv::Mat LaneDetector::mask_right_bottom(cv::Mat img_edges) {
-    cv::Mat output;
-    cv::Rect rec(1280 / 2, 540, 1280 / 2, 960 - 540);
-    output = img_edges(rec);
-
-    return output;
-}
-
-cv::Mat LaneDetector::mask_center_bottom(cv::Mat img_edges) {
-    cv::Mat output;
-    cv::Rect rec(1280 / 4, 540, 1280 / 2, 960 - 540);
-    output = img_edges(rec);
-    return output;
-}
-
-cv::Mat LaneDetector::mask_left_bottom(cv::Mat img_edges) {
-    cv::Mat output;
-    cv::Rect rec(0, 540, 1280 / 2, 960 - 540);
-    output = img_edges(rec);
-    return output;
-}
-
 // HOUGH LINES
 /**
  *@brief Obtain all the line segments in the masked images which are going to be part of the lane boundaries
@@ -159,7 +126,7 @@ std::vector<std::vector<cv::Vec4i> > LaneDetector::lineSeparation(std::vector<cv
     size_t j = 0;
     cv::Point ini;
     cv::Point fini;
-    double slope_thresh = 0.17;     //TODO changed from 0.3
+    double slope_thresh = 0.3;     //TODO changed from 0.3
     std::vector<double> slopes;
     std::vector<cv::Vec4i> selected_lines;
     std::vector<cv::Vec4i> right_lines, left_lines;
@@ -267,8 +234,8 @@ LaneDetector::regression(std::vector<std::vector<cv::Vec4i> > left_right_lines, 
 
     // One the slope and offset points have been obtained, apply the line equation to obtain the line points
     int ini_y = inputImage.rows;
-    //int fin_y = 470;
-    int fin_y = inputImage.cols;
+    int fin_y = 250;
+//    int fin_y = inputImage.cols;
 
     double right_ini_x = ((ini_y - right_b.y) / right_m) + right_b.x;
     double right_fin_x = ((fin_y - right_b.y) / right_m) + right_b.x;

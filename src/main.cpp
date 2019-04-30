@@ -30,13 +30,13 @@ Status trafficLightStatus = GREEN_LIGHT;
 
 string turnAsString[] = {"L", "S", "R"};
 
-std::map vars<std::string, std::string>;
-
 int speed;
 int ratio_;
 
 LaneDetector laneDetector;
 pthread_mutex_t frame_mutex;
+std::map<std::string, std::string> vars;
+
 
 double slope;
 
@@ -165,6 +165,7 @@ void *video_loop(void *) {
     //img_edges = laneDetector.edgeDetector(src);
     int width = src.size().width;
     int height = src.size().height;
+    cout << "Width:" << width << endl;
     frame = src;
     delay(1000);
     double left_slope;
@@ -189,7 +190,7 @@ void *video_loop(void *) {
 
             int degree = laneDetector.predictTurn(turn);
 
-            laneDetector.plotLane(img_mask, lane, turnAsString[turn].append(to_string(right_slope)), "Lane Detection");
+            laneDetector.plotLane(img_mask, lane, turnAsString[turn], "Lane Detection");
 
         } else {
             turn = STRAIGHT;
@@ -222,6 +223,7 @@ void *video_loop(void *) {
 
         //printf("\n%s", turnAsString[turn]);
         //namedWindow("Hello world");
+        imshow("edges", img_edges);
         waitKey(1);
         pthread_mutex_unlock(&frame_mutex);
     }
@@ -229,6 +231,7 @@ void *video_loop(void *) {
 
 void init_vars()
 {
-    speed = vars["SPEED"];
-    ratio_ = vars["RATIO"];
+    read_data();
+    speed = stoi(vars["SPEED"]);
+    ratio_ = stoi(vars["RATIO"]);
 }

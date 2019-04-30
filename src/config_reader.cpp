@@ -9,10 +9,11 @@
 #include <map>
 #include "../include/config_reader.h"
 
+std::string conf_file = "config";
 
 void read_data()
 {
-    std::ifstream cFile (config_file);
+    std::ifstream cFile (conf_file);
     if (cFile.is_open())
     {
         std::string line;

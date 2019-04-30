@@ -5,8 +5,8 @@
 #ifndef PI_PROJECT_CONFIG_READER_H
 #define PI_PROJECT_CONFIG_READER_H
 
-extern std::map vars;
-std::string config_file = "config";
+extern std::map<std::string, std::string> vars;
+
 void read_data();
 
 
