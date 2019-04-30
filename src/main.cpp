@@ -125,10 +125,9 @@ void signalHandler(int signum) {
 
     pwmStop();
     stopDCMotor();
+
     capture.release();
     video->release();
-    //video_edge->release();
-    //video_mask->release();
 
     // Closes all the windows
     //destroyAllWindows();
@@ -231,5 +230,5 @@ void *video_loop(void *) {
 void init_vars()
 {
     speed = vars["SPEED"];
-    ratio_ = vars["RATION"];
+    ratio_ = vars["RATIO"];
 }

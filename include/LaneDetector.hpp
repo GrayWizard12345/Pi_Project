@@ -65,26 +65,12 @@ public:
     std::vector<cv::Vec4i> houghLines(cv::Mat img_mask);  // Detect Hough lines in masked edges image
     std::vector<std::vector<cv::Vec4i> > lineSeparation(std::vector<cv::Vec4i> lines,
                                                         cv::Mat img_edges);  // Sprt detected lines by their slope into right and left lines
-    std::vector<std::vector<cv::Vec4i>> left_frame_lineSeparation(std::vector<cv::Vec4i> lines,
-                                                                  cv::Mat img_edges);
-
-    std::vector<std::vector<cv::Vec4i>> right_frame_lineSeparation(std::vector<cv::Vec4i> lines,
-                                                                   cv::Mat img_edges);
-
     std::vector<cv::Point> regression(std::vector<std::vector<cv::Vec4i> > left_right_lines,
                                       cv::Mat inputImage);  // Get only one line for each side of the lane
-    int left_frame_predictTurn(int &output,
-                               cv::Mat source);  // Determine if the lane is turning or not by calculating the position of the vanishing point
-    int right_frame_predictTurn(int &output, cv::Mat source);
 
     int plotLane(cv::Mat inputImage, std::vector<cv::Point> lane,
                                std::string turn, std::string frameName);  // Plot the resultant lane and turn prediction in the frame.
 
-    cv::Mat mask_left_bottom(cv::Mat img_edges);
-
-    cv::Mat mask_right_bottom(cv::Mat img_edges);
-
-    cv::Mat mask_center_bottom(cv::Mat img_edges);
 
     int predictTurn(int &output);
 

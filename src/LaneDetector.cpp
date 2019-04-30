@@ -48,10 +48,10 @@ cv::Mat LaneDetector::deNoise(cv::Mat inputImage) {
  *@return Binary image with only the edges represented in white
  */
 cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
-    left_m = 0;
-    right_m = 0;
-    left_flag = false;
-    right_flag = false;
+//    left_m = 0;
+//    right_m = 0;
+//    left_flag = false;
+//    right_flag = false;
     cv::Mat output;
     //cv::Mat kernel;
     //cv::Point anchor;
@@ -80,6 +80,7 @@ cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
     // Filter the binary image to obtain the edges
 //    cv::Canny(output, output, lowThreshold, lowThreshold * ratio, kernel_size);
     //printf("\nEdge detector: %d -- %d", output.cols, output.rows);
+    imshow("edges", output);
     return output;
 }
 
