@@ -146,8 +146,8 @@ void obstacle_signal_handler(int signum) {
         int temp = measure_distance(30000);
         if (temp != 0)
             distance = temp;
-        pwmStop();
-        delay(100);
+//        pwmStop();
+//        delay(100);
     } while (distance < 10);
     pthread_mutex_unlock(&motor_mutex);
 }
