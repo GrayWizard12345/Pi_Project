@@ -1,6 +1,4 @@
-#pragma once
-
-#include "motion.hpp"
+#include "../include/motion.hpp"
 #include <string.h>
 #include <stdio.h>
 #include<stdlib.h>
@@ -65,7 +63,7 @@ void left_interupt(int sig) {
 //    delay(150);
     pwm_left_point_turn(speed * 1.2);
     while (!get_left_lane);
-    delay(175);
+    delay(150);
     //pwmStop();
     pthread_mutex_unlock(&motor_mutex);
 
@@ -78,7 +76,7 @@ void right_interupt(int sig) {
 //    delay(150);
     pwm_right_point_turn(speed * 1.2);
     while (!get_right_lane);
-    delay(175);
+    delay(150);
     //pwmStop();
     pthread_mutex_unlock(&motor_mutex);
 }
@@ -200,10 +198,10 @@ int sensor_thread_setup() {
         printf("Failed to create a thread!");
         exit(-1);
     }
-
+/*
     if (pthread_create(&ultrasonic_thread, NULL, ultrasonic_loop, NULL)) {
         printf("Failed to create a thread!");
         exit(-1);
     }
-
+*/
 }

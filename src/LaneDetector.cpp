@@ -1,4 +1,5 @@
 /** MIT License
+/** MIT License
 Copyright (c) 2017 Miguel Maestre Trueba
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +24,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *@brief with the plot of the detected lanes and the turn prediction.
  */
 
-#include "LaneDetector.hpp"
-
+#include "../include/LaneDetector.hpp"
+using namespace cv;
+using namespace std;
 // IMAGE BLURRING
 /**
  *@brief Apply gaussian filter to the input image to denoise it
@@ -47,16 +49,24 @@ cv::Mat LaneDetector::deNoise(cv::Mat inputImage) {
  *@return Binary image with only the edges represented in white
  */
 cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
+    left_m = 0;
+    right_m = 0;
+    left_flag = false;
+    right_flag = false;
     cv::Mat output;
-    cv::Mat kernel;
+    //cv::Mat kernel;
     //cv::Point anchor;
 
     // Convert image from RGB to gray
     cv::cvtColor(img_noise, output, cv::COLOR_BGR2HSV);
-    cv::inRange(output, cv::Scalar(10, 150, 150), cv::Scalar(40, 255, 255), img_noise);
+    cv::inRange(output, cv::Scalar(20, 100, 100), cv::Scalar(45, 255, 255), output);
+//  (20, 100, 100)(20, 50, 50)
 //    cv::cvtColor(img_noise, output, cv::COLOR_RGB2GRAY);
     // Binarize gray image
-    cv::threshold(output, output, 140, 255, cv::THRESH_BINARY);
+    //cv::threshold(output, output, 140, 255, cv::THRESH_BINARY);
+
+    cv::erode(output, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size( 9, 9)));
+    cv::dilate(output, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size( 3, 3)));
 
     // Create the kernel [-1 0 1]
     // This kernel is based on the one found in the
@@ -65,10 +75,11 @@ cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
     int ratio = 3;
     int kernel_size = 3;
     cv::Mat blur_mat;
-    cv::blur(output, blur_mat, cv::Size(3, 3));
+    cv::GaussianBlur(output, output, cv::Size(9, 9), 2, 2);
+
 
     // Filter the binary image to obtain the edges
-    cv::Canny(blur_mat, output, lowThreshold, lowThreshold * ratio, kernel_size);
+//    cv::Canny(output, output, lowThreshold, lowThreshold * ratio, kernel_size);
     //printf("\nEdge detector: %d -- %d", output.cols, output.rows);
     return output;
 }
@@ -181,10 +192,10 @@ std::vector<std::vector<cv::Vec4i> > LaneDetector::lineSeparation(std::vector<cv
         fini = cv::Point(selected_lines[j][2], selected_lines[j][3]);
 
         // Condition to classify line as left side or right side
-        if (slopes[j] > 0 && fini.x > img_center && ini.x > img_center) {
+        if (slopes[j] > 0) {
             right_lines.push_back(selected_lines[j]);
             right_flag = true;
-        } else if (slopes[j] < 0 && fini.x < img_center && ini.x < img_center) {
+        } else if (slopes[j] < 0) {
             left_lines.push_back(selected_lines[j]);
             left_flag = true;
         }
@@ -416,7 +427,7 @@ int LaneDetector::right_frame_predictTurn(int &output, cv::Mat source) {
  */
 void LaneDetector::predictTurn(int &output) {
     double vanish_x;
-
+    int threashold = 20;
     // The vanishing point is the point where both lane boundary lines intersect
     vanish_x = ((right_m * right_b.x) - (left_m * left_b.x) - right_b.y + left_b.y) /
                (right_m - left_m);
@@ -470,7 +481,8 @@ int LaneDetector::plotLane(cv::Mat inputImage, std::vector<cv::Point> lane, std:
     return 0;
 }
 
-unsigned long LaneDetector::look_for_cross_walk(std::vector<cv::Vec4i> houghLines, cv::Mat &src) {
+unsigned long LaneDetector::look_for_cross_walk(cv::Mat &src) {
+/*
     cv::Point ini;
     cv::Point fini;
     double slope_thresh = 1.5;     //TODO changed from 0.3
@@ -502,4 +514,58 @@ unsigned long LaneDetector::look_for_cross_walk(std::vector<cv::Vec4i> houghLine
     }
 
     return selected_lines.size();
+*/
+    Mat crosswalk_g;
+    Mat crosswalk;
+    cvtColor(src, crosswalk_g, COLOR_RGB2GRAY);
+    cvtColor(crosswalk_g, src, COLOR_GRAY2BGR);
+    cvtColor(src, crosswalk, COLOR_RGB2HSV);
+    inRange(crosswalk, Scalar(0, 0, 215) ,Scalar(255, 50, 255),crosswalk);
+
+//    GaussianBlur(crosswalk, crosswalk, cv::Size(3, 3), 0, 0);
+    blur(crosswalk, crosswalk, cv::Size(3, 3));
+
+    int lowThreshold = 35;
+    int ratio = 3;
+    int kernel_size = 3;
+    cv::Canny(crosswalk, crosswalk, lowThreshold, lowThreshold * ratio, kernel_size);
+
+    vector<vector<Point>> contours;
+    vector<Point> approx;
+    std::vector<cv::Vec4i> hierarchy;
+    cv::findContours(crosswalk,contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+
+    cv::Mat drawing = cv::Mat::zeros( crosswalk.size(), CV_8UC3 );
+    int counter = 0;
+    for( int i = 0; i< contours.size(); i++ )
+    {
+        cv::Scalar color = cv::Scalar(0, 100, 0);
+        drawContours( drawing, contours, i, color, 1, 8, hierarchy, 0, cv::Point() );
+
+        approxPolyDP(contours[i], approx, arcLength(Mat(contours[i]), true)*0.06, true);
+        if (approx.size() == 4){
+
+            cv::line(src, approx[0], approx[1], cv::Scalar(0,255,0));
+            cv::line(src, approx[1], approx[2], cv::Scalar(0,255,0));
+            cv::line(src, approx[2], approx[3], cv::Scalar(0,255,0));
+            cv::line(src, approx[3], approx[0], cv::Scalar(0,255,0));
+
+            cv::line(drawing, approx[0], approx[1], cv::Scalar(255,255,0));
+            cv::line(drawing, approx[1], approx[2], cv::Scalar(255,255,0));
+            cv::line(drawing, approx[2], approx[3], cv::Scalar(255,255,0));
+            cv::line(drawing, approx[3], approx[0], cv::Scalar(255,255,0));
+
+            counter++;
+        }
+    }
+
+    if(counter >= 4)
+        putText(crosswalk, "CrossWalk detected - r#:" + to_string(counter), Point(50,100), cv::FONT_HERSHEY_COMPLEX_SMALL, 1, cvScalar(255, 0, 0), 1, CV_AA);
+    cout << counter;
+    imshow("drawing", drawing);
+    imshow("Looking here", src);
+
+
 }
+
