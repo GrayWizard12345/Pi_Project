@@ -53,11 +53,12 @@ private:
     double img_center;
     bool left_flag = false;  // Tells us if there's left boundary of lane detected
     bool right_flag = false;  // Tells us if there's right boundary of lane detected
-    cv::Point right_b;  // Members of both line equations of the lane boundaries:
-    cv::Point left_b;  //
+
 public:
     double right_m;  // y = m*x + b
     double left_m;  //
+    cv::Point right_b;  // Members of both line equations of the lane boundaries:
+    cv::Point left_b;  //
 
     cv::Mat deNoise(cv::Mat inputImage);  // Apply Gaussian blurring to the input Image
     cv::Mat edgeDetector(cv::Mat img_noise);  // Filter the image to obtain only edges
@@ -72,7 +73,7 @@ public:
                                std::string turn, std::string frameName);  // Plot the resultant lane and turn prediction in the frame.
 
 
-    int predictTurn(int &output);
+    double predictTurn(int &output);
 
     unsigned long look_for_cross_walk(cv::Mat &src);
 };

@@ -24,6 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #include "../include/LaneDetector.hpp"
+#include "../include/config_reader.h"
 using namespace cv;
 using namespace std;
 // IMAGE BLURRING
@@ -48,28 +49,23 @@ cv::Mat LaneDetector::deNoise(cv::Mat inputImage) {
  *@return Binary image with only the edges represented in white
  */
 cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
-//    left_m = 0;
-//    right_m = 0;
-//    left_flag = false;
-//    right_flag = false;
-    cv::Mat output;
-    //cv::Mat kernel;
-    //cv::Point anchor;
 
-    // Convert image from RGB to gray
+    cv::Mat output;
+    int H, S, V, H2, S2, V2;
+    H = stoi(vars["LANE_DETECTOR_SCALAR_H"]);
+    S = stoi(vars["LANE_DETECTOR_SCALAR_S"]);
+    V = stoi(vars["LANE_DETECTOR_SCALAR_V"]);
+
+    H2 = stoi(vars["LANE_DETECTOR_SCALAR_H2"]);
+    S2 = stoi(vars["LANE_DETECTOR_SCALAR_S2"]);
+    V2 = stoi(vars["LANE_DETECTOR_SCALAR_V2"]);
+    // Convert image from RGB to HSV
     cv::cvtColor(img_noise, output, cv::COLOR_BGR2HSV);
-    cv::inRange(output, cv::Scalar(10, 150, 150), cv::Scalar(40, 255, 255), output);
+    cv::inRange(output, cv::Scalar(H, S, V), cv::Scalar(H2, S2, V2), output);
 //  (20, 100, 100)(20, 50, 50)
-//    cv::cvtColor(img_noise, output, cv::COLOR_RGB2GRAY);
-    // Binarize gray image
-    //cv::threshold(output, output, 140, 255, cv::THRESH_BINARY);
 
 //    cv::dilate(output, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size( 3, 3)));
 //    cv::erode(output, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size( 9, 9)));
-
-    // Create the kernel [-1 0 1]
-    // This kernel is based on the one found in the
-    // Lane Departure Warning System by Mathworks
     int lowThreshold = 35;
     int ratio = 3;
     int kernel_size = 3;
@@ -91,7 +87,8 @@ cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
  */
 cv::Mat LaneDetector::mask(cv::Mat img_edges) {
     cv::Mat output;
-    cv::Rect rect(0, 960 - 540, 1280, 540);
+    int y = stoi(vars["ROI_Y"]);
+    cv::Rect rect(0, y, 1280, 960 - y);
 
     output = img_edges(rect);
 
@@ -126,14 +123,10 @@ std::vector<std::vector<cv::Vec4i> > LaneDetector::lineSeparation(std::vector<cv
     size_t j = 0;
     cv::Point ini;
     cv::Point fini;
-    double slope_thresh = 0.3;     //TODO changed from 0.3
+    double slope_thresh = 0.17;     //TODO changed from 0.3
     std::vector<double> slopes;
     std::vector<cv::Vec4i> selected_lines;
     std::vector<cv::Vec4i> right_lines, left_lines;
-
-
-    right_flag = false;
-    left_flag = false;
 
     // Calculate the slope of all the detected lines
     for (auto i : lines) {
@@ -159,10 +152,10 @@ std::vector<std::vector<cv::Vec4i> > LaneDetector::lineSeparation(std::vector<cv
         fini = cv::Point(selected_lines[j][2], selected_lines[j][3]);
 
         // Condition to classify line as left side or right side
-        if (slopes[j] > 0) {
+        if (slopes[j] > 0 && fini.x > img_center && ini.x > img_center) {
             right_lines.push_back(selected_lines[j]);
             right_flag = true;
-        } else if (slopes[j] < 0) {
+        } else if (slopes[j] < 0 && fini.x < img_center && ini.x < img_center) {
             left_lines.push_back(selected_lines[j]);
             left_flag = true;
         }
@@ -197,11 +190,14 @@ LaneDetector::regression(std::vector<std::vector<cv::Vec4i> > left_right_lines, 
     std::vector<cv::Point> left_pts;
 
     // If right lines are being detected, fit a line using all the init and final points of the lines
+    Point r_point;
+    Point l_point;
     if (right_flag == true) {
         for (auto i : left_right_lines[0]) {
             ini = cv::Point(i[0], i[1]);
             fini = cv::Point(i[2], i[3]);
 
+            line(inputImage, ini, fini, Scalar(250,250,250), 15);
             right_pts.push_back(ini);
             right_pts.push_back(fini);
         }
@@ -211,6 +207,8 @@ LaneDetector::regression(std::vector<std::vector<cv::Vec4i> > left_right_lines, 
             cv::fitLine(right_pts, right_line, CV_DIST_L2, 0, 0.01, 0.01);
             right_m = right_line[1] / right_line[0];
             right_b = cv::Point(right_line[2], right_line[3]);
+            r_point.x = right_b.x - 200 * right_line[0];
+            r_point.y = right_b.y - 200 * right_line[1];
         }
     }
 
@@ -219,7 +217,7 @@ LaneDetector::regression(std::vector<std::vector<cv::Vec4i> > left_right_lines, 
         for (auto j : left_right_lines[1]) {
             ini2 = cv::Point(j[0], j[1]);
             fini2 = cv::Point(j[2], j[3]);
-
+            line(inputImage, ini2, fini2, Scalar(250,250,250), 15);
             left_pts.push_back(ini2);
             left_pts.push_back(fini2);
         }
@@ -229,12 +227,15 @@ LaneDetector::regression(std::vector<std::vector<cv::Vec4i> > left_right_lines, 
             cv::fitLine(left_pts, left_line, CV_DIST_L2, 0, 0.01, 0.01);
             left_m = left_line[1] / left_line[0];
             left_b = cv::Point(left_line[2], left_line[3]);
+            l_point.x = left_b.x - 200 * left_line[0];
+            l_point.y = left_b.y - 200 * left_line[1];
         }
     }
 
     // One the slope and offset points have been obtained, apply the line equation to obtain the line points
-    int ini_y = inputImage.rows;
-    int fin_y = 250;
+//    int ini_y = inputImage.rows;
+    int ini_y = 960;
+    int fin_y = 470;
 //    int fin_y = inputImage.cols;
 
     double right_ini_x = ((ini_y - right_b.y) / right_m) + right_b.x;
@@ -247,6 +248,11 @@ LaneDetector::regression(std::vector<std::vector<cv::Vec4i> > left_right_lines, 
     output[1] = cv::Point(right_fin_x, fin_y);
     output[2] = cv::Point(left_ini_x, ini_y);
     output[3] = cv::Point(left_fin_x, fin_y);
+//
+//        output[0] = right_b;
+//        output[1] = r_point;
+//        output[2] = left_b;
+//        output[3] = l_point;
 
     return output;
 }
@@ -258,9 +264,9 @@ LaneDetector::regression(std::vector<std::vector<cv::Vec4i> > left_right_lines, 
  *@brief It is done by seeing where the vanishing point is with respect to the center of the image
  *@return String that says if there is left or right turn or if the road is straight
  */
-int LaneDetector::predictTurn(int &output) {
+double LaneDetector::predictTurn(int &output) {
     double vanish_x;
-    double thr_vp = 25;
+    double thr_vp = stoi(vars["LANE_DETECTION_CENTER_INTERVAL"]);
 
     // The vanishing point is the point where both lane boundary lines intersect
     vanish_x = static_cast<double>(((right_m*right_b.x) - (left_m*left_b.x) - right_b.y + left_b.y) / (right_m - left_m));
@@ -272,6 +278,8 @@ int LaneDetector::predictTurn(int &output) {
         output = RIGHT;
     else if (vanish_x >= (img_center - thr_vp) && vanish_x <= (img_center + thr_vp))
         output = STRAIGHT;
+
+    return vanish_x;
 
 }
 
@@ -300,11 +308,16 @@ int LaneDetector::plotLane(cv::Mat inputImage, std::vector<cv::Point> lane, std:
     cv::line(inputImage, lane[0], lane[1], cv::Scalar(0, 255, 255), 5, CV_AA);
     cv::line(inputImage, lane[2], lane[3], cv::Scalar(0, 255, 255), 5, CV_AA);
 
+    double vanish_x = static_cast<double>(((right_m*right_b.x) - (left_m*left_b.x) - right_b.y + left_b.y) / (right_m - left_m));
+    line(inputImage, Point(vanish_x, inputImage.rows / 2 - 10), Point(vanish_x, inputImage.rows / 2 + 10), Scalar(250, 255, 255), 25, CV_AA);
+
     // Plot the turn message
+    resize(inputImage, inputImage, Size(), 0.6, 0.6);
     cv::putText(inputImage, turn, cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
 
     // Show the final output image
     cv::namedWindow(frameName, CV_WINDOW_AUTOSIZE);
+
     cv::imshow(frameName, inputImage);
     return 0;
 }

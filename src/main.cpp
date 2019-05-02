@@ -40,6 +40,12 @@ std::map<std::string, std::string> vars;
 
 double slope;
 
+int show_edges;
+
+int ultrasonic_is_on;
+
+int ir_tracers_are_on;
+
 void init_vars();
 
 void signalHandler(int signum);
@@ -90,19 +96,26 @@ int main(int argc, char **argv) {
     while (true) {
 
         pthread_mutex_lock(&motor_mutex);
+
+        double turn_speed = speed / ratio_;
+//        if (slope > 0 && slope < 100)
+//            turn_speed = abs(slope - 50) * speed / ratio_;
+
         if (turn == Turn::STRAIGHT) {
-            speedLeft = speed;
-            speedRight = speed;
+            speedLeft = speed - 40;
+            speedRight = speed - 40;
         } else if (turn == Turn::LEFT) {
             speedRight = speed;
-            speedLeft = speed / 4;
+//            speedLeft = speed / ratio_;
+            speedLeft = turn_speed;
         } else if (turn == Turn::RIGHT) {
-            speedRight = speed / 4;
+//            speedRight = speed / ratio_;
+            speedRight = turn_speed;
             speedLeft = speed;
         }
         
         if (trafficLightStatus != RED_LIGHT) {
-//            pwm_go_smooth(speedLeft, speedRight);
+            pwm_go_smooth(speedLeft, speedRight);
         }
         //pthread_mutex_unlock(&frame_mutex);
         pthread_mutex_unlock(&motor_mutex);
@@ -174,7 +187,7 @@ void *video_loop(void *) {
    
     while (true) {
 
-        pthread_mutex_lock(&frame_mutex);
+//        pthread_mutex_lock(&frame_mutex);
         capture.grab(); //grab the scene using raspicam
         capture.retrieve(src); // retrieve the captured scene as an image and store it in matrix container
         frame = src;
@@ -186,46 +199,33 @@ void *video_loop(void *) {
         if (!lines.empty()) {
             left_right_lines = laneDetector.lineSeparation(lines, img_edges);
 
-            lane = laneDetector.regression(left_right_lines, img_mask);
+            lane = laneDetector.regression(left_right_lines, img_edges);
 
-            int degree = laneDetector.predictTurn(turn);
+            double vanish_x = laneDetector.predictTurn(turn);
 
-            laneDetector.plotLane(img_mask, lane, turnAsString[turn], "Lane Detection");
+
+
+            double full = img_mask.cols;
+            slope = vanish_x * 100 / full;
+
+            laneDetector.plotLane(src, lane, turnAsString[turn] + " " + to_string(slope), "Lane Detection");
 
         } else {
             turn = STRAIGHT;
         }
-//
-//        slope = (abs(left_slope) + abs(right_slope)) / 2;
-//
-//        turn = (left_frame_turn + right_frame_turn) / 2;
-//
-//        int rows = max(right_edged.rows, left_edged.rows);
-//        int cols = left_edged.cols + right_edged.cols;
-//
-//        Mat3b res(rows, cols, Vec3b(0,0,0));
-//
-//        left_edged.copyTo(res(Rect(0, 0, left_edged.cols, left_edged.rows)));
-//        right_edged.copyTo(res(Rect(left_edged.cols, 0, right_edged.cols, right_edged.rows)));
-//        //printf("L : %lf --- R: %lf", left_slope, right_slope);
-//        putText(res, turnAsString[left_frame_turn] +  " " + to_string(left_slope) + " "+ turnAsString[left_frame_turn] + " " + to_string(right_slope), Point(35, 70), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
-//        resize(res, res, Size(), 0.75, 0.75);
-//        putText(res, "General Turn: " + turnAsString[turn], Point(35, 140), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
 
-        //line(res, left_ini, right_fini, Scalar(0, 255, 0), 5, LINE_AA);
-        //line(res, right_ini, right_fini, Scalar(0, 0, 255), 5, LINE_AA);
-        //line(res, Point(0,0), Point(50,50), Scalar(0, 0, 255), 5, LINE_AA);
-        //video_mask->write(img_mask);
-        //video_mask->write(img_mask);
         video->write(src);
 //        imshow("Road", res);
 
 
         //printf("\n%s", turnAsString[turn]);
         //namedWindow("Hello world");
-        imshow("edges", img_edges);
+        if(show_edges) {
+            resize(img_edges, img_edges, Size(), 0.6, 0.6);
+            imshow("edges", img_edges);
+        }
         waitKey(1);
-        pthread_mutex_unlock(&frame_mutex);
+//        pthread_mutex_unlock(&frame_mutex);
     }
 }
 
@@ -234,4 +234,7 @@ void init_vars()
     read_data();
     speed = stoi(vars["SPEED"]);
     ratio_ = stoi(vars["RATIO"]);
+    show_edges = stoi(vars["SHOW_EDGES"]);
+    ultrasonic_is_on = stoi(vars["ULTRASONIC_ON"]);
+    ir_tracers_are_on = stoi(vars["IR_TRACERS_ON"]);
 }

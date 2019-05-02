@@ -32,7 +32,8 @@ long recordPulseLength();
 void *ultrasonic_loop(void *);
 
 extern int speed;
-
+extern int ultrasonic_is_on;
+extern int ir_tracers_are_on;
 int left_ir_val;
 int right_ir_val;
 int distance = 0;
@@ -192,14 +193,16 @@ void *ultrasonic_loop(void *) {
 
 int sensor_thread_setup() {
 
-    if (pthread_create(&tracer_thread, NULL, IR_tracer_loop, NULL)) {
-        printf("Failed to create a thread!");
-        exit(-1);
-    }
-/*
-    if (pthread_create(&ultrasonic_thread, NULL, ultrasonic_loop, NULL)) {
-        printf("Failed to create a thread!");
-        exit(-1);
-    }
-*/
+    if(ir_tracers_are_on)
+        if (pthread_create(&tracer_thread, NULL, IR_tracer_loop, NULL)) {
+            printf("Failed to create a thread!");
+            exit(-1);
+        }
+
+    if(ultrasonic_is_on)
+        if (pthread_create(&ultrasonic_thread, NULL, ultrasonic_loop, NULL)) {
+            printf("Failed to create a thread!");
+            exit(-1);
+        }
+
 }
