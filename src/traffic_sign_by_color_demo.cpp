@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
 
                 // obtain the image ROI:
                 Mat circleROI(blue_hue_range, circleBox);
-
+                imshow("Test", circleROI);
                 int interval = 10;
 
                 if (interval * 2 > circleROI.rows)

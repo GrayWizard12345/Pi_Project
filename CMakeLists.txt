@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.9.4)
 project(Pi_Project)
-
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(Pi_Project src/main.cpp src/LaneDetector.cpp src/motion.cpp src/sensors_controll.cpp src/traffic_light.cpp src/traffic_sign_by_color.cpp src/traffic_sign_by_classifier.cpp)
-SET(CMAKE_CXX_FLAGS -lpthread -lwiringPi)
+find_package(OpenCV REQUIRED)
+include_directories($OpenCV_INCLUDE_DIRS)
+add_executable(traffic_sign_video src/traffic_sign_by_color_demo.cpp)
+target_link_libraries(traffic_sign_video ${OpenCV_LIBS})
+add_executable(traffic_sign_img src/traffic_sign_by_color.cpp)
+target_link_libraries(traffic_sign_img ${OpenCV_LIBS})
