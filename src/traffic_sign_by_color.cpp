@@ -2,73 +2,46 @@
 #include <iostream>
 #include <string>
 
+#include "traffic_sign.h"
+#include "CascadeUtil.h"
+
 using namespace cv;
 using namespace std;
 
+cv::Scalar orange = cv::Scalar(255, 178, 102);
+cv::Scalar blue = cv::Scalar(255, 255, 51);
+cv::Scalar green = cv::Scalar(153, 255, 51);
+cv::Scalar yellow = cv::Scalar(51, 255, 255);
+cv::Scalar violet = cv::Scalar(127, 0, 255);
+cv::Scalar purple = cv::Scalar(255, 51, 255);
+cv::Scalar pink = cv::Scalar(255, 51, 153);
+
 int main(int argc, char **argv) {
     Mat bgr = imread(argv[1], IMREAD_COLOR);
-    Mat hsv_image;
-    cvtColor(bgr, hsv_image, cv::COLOR_BGR2HSV);
 
-    printf("Window size %d : %d", bgr.cols, bgr.rows);
+    Mat roi = getTrafficSignROI(bgr);
 
-    int high = 100, low = 15;
+    CascadeUtil cascadeUtil;
 
-    if (argc >= 4) {
-        high = atoi(argv[2]);
-        low = atoi(argv[3]);
-
-        printf("New values high: %d, low %d\n", high, low);
-    }
-
-    int minRadius = 20, maxRadius = 60;
-    if (argc >= 6) {
-        minRadius = atoi(argv[4]);
-        maxRadius = atoi(argv[5]);
-    }
-
-    Scalar orange = Scalar(255, 178, 102);
-    Scalar yellow = Scalar(255, 255, 51);
-    Scalar green = Scalar(153, 255, 51);
-    Scalar blue = Scalar(51, 255, 255);
-    Scalar violet = Scalar(127, 0, 255);
-    Scalar purple = Scalar(255, 51, 255);
-    Scalar pink = Scalar(255, 51, 153);
-
-    Mat blue_hue_range;
-    inRange(hsv_image, cv::Scalar(50, 0, 0), cv::Scalar(140, 255, 255), blue_hue_range);
-    dilate(blue_hue_range, blue_hue_range, getStructuringElement(MORPH_ELLIPSE, Size(9,9)));
-    namedWindow("Blue", WINDOW_AUTOSIZE);
-    imshow("Blue", blue_hue_range);
-
-    vector<Vec3f> circles;
-    HoughCircles(blue_hue_range, circles, HOUGH_GRADIENT, 1, blue_hue_range.rows / 8, high, low, minRadius, maxRadius);
-
-    vector<Vec4i> lines;
+    std::vector<cv::Vec3f> circles = getBlueCircles(roi);
 
     printf("detected circles size %d\n", circles.size());
 
     for (size_t i = 0; i < circles.size(); i++) {
         Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-        int radius = cvRound(circles[i][2]) - 5;
+        int radius = cvRound(circles[i][2]);
 
         printf("x: %d y: %d radius: %d\n", center.x, center.y, radius);
-//        circle(bgr, center, radius, yellow, 2, 8, 0);
+        circle(roi, center, radius, yellow, 2, 8, 0);
 
         Rect circleBox(center.x - radius, center.y - radius, radius * 2, radius * 2);
 
-        // check the box within the image plane
-        if (0 <= circleBox.x
-            && 0 <= circleBox.width
-            && circleBox.x + circleBox.width <= bgr.cols
-            && 0 <= circleBox.y
-            && 0 <= circleBox.height
-            && circleBox.y + circleBox.height <= bgr.rows) {
-            //the area is within the image
+        if (isWithMat(circleBox, roi)) {
 
-            // obtain the image ROI:
+            Mat circleROI(roi, circleBox);
+
+            /*
             Mat black = Mat::zeros(circleBox.size(), CV_8UC3);
-            Mat circleROI(bgr, circleBox);
             circle(black, Point(radius,radius), radius, Scalar::all(255), -1);
             imshow("Test", circleROI);
             circleROI = black & circleROI;
@@ -79,12 +52,35 @@ int main(int argc, char **argv) {
             inRange(gray, 100, 255, arrow);
             erode(arrow, arrow, getStructuringElement(MORPH_ELLIPSE, Size(6,6)));
 
-
             imshow("Gray", gray);
             imshow("Arrow", arrow);
+             */
+
+            cascadeUtil.setDetectionArea(circleROI);
+            cascadeUtil.detectAllBlueSigns();
+
+
+            for (unsigned j = 0; j < cascadeUtil.parking.size(); j++) {
+                rectangle(roi, cascadeUtil.parking[j], yellow, 2, 1);
+                putText(roi, "parking", Point(50, 90), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+            }
+
+            for (unsigned k = 0; k < cascadeUtil.left_.size(); k++){
+                rectangle(roi, cascadeUtil.left_[k], green, 2, 1);
+                putText(roi, "left", Point(50, 110), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+            }
+
+
+            for (unsigned n = 0; n < cascadeUtil.right_.size(); n++){
+                rectangle(roi, cascadeUtil.right_[n], purple, 2, 1);
+                putText(roi, "right", Point(50, 150), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+            }
+
         } else {
             printf("outside\n");
         }
+
+        imshow("ROI", roi);
     }
 
     namedWindow("Original", WINDOW_AUTOSIZE);

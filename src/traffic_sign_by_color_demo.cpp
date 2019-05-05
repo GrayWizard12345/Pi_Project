@@ -1,4 +1,6 @@
 #include "opencv2/opencv.hpp"
+#include "traffic_sign.h"
+#include "CascadeUtil.h"
 #include <iostream>
 #include <string>
 
@@ -6,12 +8,20 @@ using namespace cv;
 using namespace std;
 
 Scalar orange = Scalar(255, 178, 102);
-Scalar yellow = Scalar(255, 255, 51);
+Scalar blue = Scalar(255, 255, 51);
 Scalar green = Scalar(153, 255, 51);
-Scalar blue = Scalar(51, 255, 255);
+Scalar yellow = Scalar(51, 255, 255);
 Scalar violet = Scalar(127, 0, 255);
 Scalar purple = Scalar(255, 51, 255);
 Scalar pink = Scalar(255, 51, 153);
+
+//FIXME blue range sees black objects
+
+//TODO move all data into the method
+
+//TODO divide the video into the parts by sign
+//TODO detect rectangle for parking sign
+//TODO add inRange for red signs
 
 int main(int argc, char **argv) {
     if (argc < 2) {
@@ -24,23 +34,10 @@ int main(int argc, char **argv) {
     if (!cap.isOpened())
         return -1;
 
-    int high = 100, low = 15;
-
-    if (argc >= 4) {
-        high = atoi(argv[2]);
-        low = atoi(argv[3]);
-    }
-
-    int minRadius = 20, maxRadius = 60;
-    if (argc >= 6) {
-        minRadius = atoi(argv[4]);
-        maxRadius = atoi(argv[5]);
-    }
 
     Mat bgr;
-    Mat hsv_image;
-    Mat blue_hue_range;
     vector<Vec3f> circles;
+    CascadeUtil cascadeUtil;
 
     int frameCount = 0;
 
@@ -49,12 +46,11 @@ int main(int argc, char **argv) {
         if (!cap.read(bgr))
             break;
 
-        cvtColor(bgr, hsv_image, cv::COLOR_BGR2HSV);
+        bgr = getTrafficSignROI(bgr);
 
-        inRange(hsv_image, cv::Scalar(80, 65, 65, 0), cv::Scalar(140, 255, 255, 0), blue_hue_range);
+        std::vector<cv::Vec3f> circles = getBlueCircles(bgr);
 
-        HoughCircles(blue_hue_range, circles, HOUGH_GRADIENT, 1, blue_hue_range.rows / 8, high, low, minRadius,
-                     maxRadius);
+        printf("detected circles size %d\n", circles.size());
 
         for (size_t i = 0; i < circles.size(); i++) {
             Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
@@ -65,71 +61,45 @@ int main(int argc, char **argv) {
 
             Rect circleBox(center.x - radius, center.y - radius, radius * 2, radius * 2);
 
-            // check the box within the image plane
-            if (0 <= circleBox.x
-                && 0 <= circleBox.width
-                && circleBox.x + circleBox.width <= bgr.cols
-                && 0 <= circleBox.y
-                && 0 <= circleBox.height
-                && circleBox.y + circleBox.height <= bgr.rows) {
-                //the area is within the image
+            if (isWithMat(circleBox, bgr)) {
 
-                // obtain the image ROI:
-                Mat circleROI(blue_hue_range, circleBox);
+                Mat circleROI(bgr, circleBox);
+
+                /*
+                Mat black = Mat::zeros(circleBox.size(), CV_8UC3);
+                circle(black, Point(radius,radius), radius, Scalar::all(255), -1);
                 imshow("Test", circleROI);
-                int interval = 10;
+                circleROI = black & circleROI;
+                Mat gray;
+                cvtColor(circleROI, gray, COLOR_RGB2GRAY);
+                dilate(gray, gray, getStructuringElement(MORPH_ELLIPSE, Size(6,6)));
+                Mat arrow;
+                inRange(gray, 100, 255, arrow);
+                erode(arrow, arrow, getStructuringElement(MORPH_ELLIPSE, Size(6,6)));
 
-                if (interval * 2 > circleROI.rows)
-                    interval = circleROI.rows;
+                imshow("Gray", gray);
+                imshow("Arrow", arrow);
+                 */
 
+                cascadeUtil.setDetectionArea(circleROI);
+                cascadeUtil.detectAllBlueSigns();
 
-                Rect roiBox(0, circleROI.rows / 2 - interval, circleROI.cols, interval * 2);
-                printf("circleROI - %d %d\n", circleROI.cols, circleROI.rows);
+                for (unsigned j = 0; j < cascadeUtil.parking.size(); j++) {
+                    rectangle(bgr, cascadeUtil.parking[j], yellow, 2, 1);
+                    putText(bgr, "parking", Point(50, 90), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+                }
 
-                printf("roiBox %d %d %d %d\n", roiBox.x, roiBox.y, roiBox.width, roiBox.height);
-
-                if (!(0 <= roiBox.x
-                      && 0 <= roiBox.width
-                      && roiBox.x + roiBox.width <= circleROI.cols
-                      && 0 <= roiBox.y
-                      && 0 <= roiBox.height
-                      && roiBox.y + roiBox.height <= circleROI.rows)) {
-                    printf("out of roi range\n");
-                    continue;
+                for (unsigned k = 0; k < cascadeUtil.left_.size(); k++){
+                    rectangle(bgr, cascadeUtil.left_[k], green, 2, 1);
+                    putText(bgr, "left", Point(50, 110), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
                 }
 
 
-                Mat roi(circleROI, roiBox);
-
-                printf("got ROI\n");
-
-                int width = roi.cols / 2;
-                int height = roi.rows;
-
-                Rect leftRec(0, 0, width, height);
-                Rect rightRec(width, 0, width, height);
-
-                Mat leftFrame(roi, leftRec);
-                Mat rightFrame(roi, rightRec);
-
-                int leftBlackNum = countNonZero(leftFrame);
-                int rightBlackNum = countNonZero(rightFrame);
-
-                //TODO maybe clash with circle traffic sign
-                if (abs(leftBlackNum - rightBlackNum) > 10) {
-                    //it is left/right turn traffic sign
-                    if (leftBlackNum > rightBlackNum) {
-                        circle(bgr, center, radius, yellow, 2, 8, 0);
-                        putText(bgr, "left", Point(50, 50), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1,
-                                CV_AA);
-                    } else {
-                        circle(bgr, center, radius, orange, 2, 8, 0);
-                        putText(bgr, "right", Point(50, 50), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1,
-                                CV_AA);
-                    }
+                for (unsigned n = 0; n < cascadeUtil.right_.size(); n++){
+                    rectangle(bgr, cascadeUtil.right_[n], purple, 2, 1);
+                    putText(bgr, "right", Point(50, 150), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
                 }
 
-                printf("%d mask \t %d - %d\n", i, leftBlackNum, rightBlackNum);
             } else {
                 printf("outside\n");
             }
