@@ -61,5 +61,5 @@ public:
      */
     void detectAllSigns();
 
-    void detectAllBlueSigns();
+    void detectAllCircleBlueSigns();
 };

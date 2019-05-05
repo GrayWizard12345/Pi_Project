@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
                  */
 
                 cascadeUtil.setDetectionArea(circleROI);
-                cascadeUtil.detectAllBlueSigns();
+                cascadeUtil.detectAllCircleBlueSigns();
 
                 for (unsigned j = 0; j < cascadeUtil.parking.size(); j++) {
                     rectangle(bgr, cascadeUtil.parking[j], yellow, 2, 1);

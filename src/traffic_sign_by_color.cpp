@@ -31,6 +31,10 @@ int main(int argc, char **argv) {
         Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
         int radius = cvRound(circles[i][2]);
 
+        //TODO maybe it should be changed
+        if (radius < 80)
+            continue;
+
         printf("x: %d y: %d radius: %d\n", center.x, center.y, radius);
         circle(roi, center, radius, yellow, 2, 8, 0);
 
@@ -40,38 +44,17 @@ int main(int argc, char **argv) {
 
             Mat circleROI(roi, circleBox);
 
-            /*
-            Mat black = Mat::zeros(circleBox.size(), CV_8UC3);
-            circle(black, Point(radius,radius), radius, Scalar::all(255), -1);
-            imshow("Test", circleROI);
-            circleROI = black & circleROI;
-            Mat gray;
-            cvtColor(circleROI, gray, COLOR_RGB2GRAY);
-            dilate(gray, gray, getStructuringElement(MORPH_ELLIPSE, Size(6,6)));
-            Mat arrow;
-            inRange(gray, 100, 255, arrow);
-            erode(arrow, arrow, getStructuringElement(MORPH_ELLIPSE, Size(6,6)));
-
-            imshow("Gray", gray);
-            imshow("Arrow", arrow);
-             */
-
             cascadeUtil.setDetectionArea(circleROI);
-            cascadeUtil.detectAllBlueSigns();
+            cascadeUtil.detectAllCircleBlueSigns();
 
 
-            for (unsigned j = 0; j < cascadeUtil.parking.size(); j++) {
-                rectangle(roi, cascadeUtil.parking[j], yellow, 2, 1);
-                putText(roi, "parking", Point(50, 90), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
-            }
-
-            for (unsigned k = 0; k < cascadeUtil.left_.size(); k++){
+            for (unsigned k = 0; k < cascadeUtil.left_.size(); k++) {
                 rectangle(roi, cascadeUtil.left_[k], green, 2, 1);
                 putText(roi, "left", Point(50, 110), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
             }
 
 
-            for (unsigned n = 0; n < cascadeUtil.right_.size(); n++){
+            for (unsigned n = 0; n < cascadeUtil.right_.size(); n++) {
                 rectangle(roi, cascadeUtil.right_[n], purple, 2, 1);
                 putText(roi, "right", Point(50, 150), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
             }
@@ -83,8 +66,8 @@ int main(int argc, char **argv) {
         imshow("ROI", roi);
     }
 
-    namedWindow("Original", WINDOW_AUTOSIZE);
-    imshow("Original", bgr);
+//    namedWindow("Original", WINDOW_AUTOSIZE);
+//    imshow("Original", bgr);
 
 
     waitKey(0);

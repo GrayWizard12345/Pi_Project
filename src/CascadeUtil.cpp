@@ -44,25 +44,25 @@ void CascadeUtil::setDetectionArea(cv::Mat bgr) {
 }
 
 std::vector<cv::Rect> CascadeUtil::detectPedestrian() {
-    cascade_pedestrian.detectMultiScale(detectionArea, pedestrian, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(120, 120));
+    cascade_pedestrian.detectMultiScale(detectionArea, pedestrian, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(100, 100));
     isPedestrianDetected = pedestrian.empty();
     return pedestrian;
 }
 
 std::vector<cv::Rect> CascadeUtil::detectParking() {
-    cascade_parking.detectMultiScale(detectionArea, parking, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(120, 120));
+    cascade_parking.detectMultiScale(detectionArea, parking, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(100, 100));
     isParkingDetected = parking.empty();
     return parking;
 }
 
 std::vector<cv::Rect> CascadeUtil::detectLeftTurn() {
-    cascade_left.detectMultiScale(detectionArea, left_, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(120, 120));
+    cascade_left.detectMultiScale(detectionArea, left_, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(150, 150));
     isLeftTurnDetected = left_.empty();
     return left_;
 }
 
 std::vector<cv::Rect> CascadeUtil::detectRightTurn() {
-    cascade_right.detectMultiScale(detectionArea, right_, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(120, 120));
+    cascade_right.detectMultiScale(detectionArea, right_, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(150, 150));
     isRightTurnDetected = right_.empty();
     return right_;
 }
@@ -75,8 +75,7 @@ void CascadeUtil::detectAllSigns() {
 }
 
 
-void CascadeUtil::detectAllBlueSigns() {
-    detectParking();
+void CascadeUtil::detectAllCircleBlueSigns() {
     detectLeftTurn();
     detectRightTurn();
 }
