@@ -39,8 +39,8 @@ int right_ir_val;
 int distance = 0;
 
 pthread_mutex_t motor_mutex;
-pthread_t tracer_thread;
-pthread_t ultrasonic_thread;
+extern pthread_t tracer_thread;
+extern pthread_t ultrasonic_thread;
 
 void sensor_setup() {
     // IR sensor pins
@@ -59,9 +59,9 @@ void left_interupt(int sig) {
 
     printf("\nleft_interupt called!");
     pthread_mutex_lock(&motor_mutex);
-//    pwmGoBack(speed);
-//    delay(150);
-    pwm_left_point_turn(speed * 1.2);
+    pwmGoBack(speed);
+    delay(100);
+    pwm_left_point_turn(speed);
     while (!get_left_lane);
     delay(150);
     //pwmStop();
@@ -72,9 +72,9 @@ void left_interupt(int sig) {
 void right_interupt(int sig) {
     printf("\nright_interupt called!");
     pthread_mutex_lock(&motor_mutex);
-//    pwmGoBack(speed);
-//    delay(150);
-    pwm_right_point_turn(speed * 1.2);
+    pwmGoBack(speed);
+    delay(100);
+    pwm_right_point_turn(speed);
     while (!get_right_lane);
     delay(150);
     //pwmStop();
@@ -85,7 +85,7 @@ void *wait_left_ir_thread(void *) {
     for (int i = 0; i < 25; i++) {
         left_ir_val = get_left_lane;
         if (left_ir_val == WHITE)
-            return NULL;
+            return nullptr;
         delay(5);
     }
 
@@ -95,7 +95,7 @@ void *wait_right_ir_thread(void *) {
     for (int i = 0; i < 25; i++) {
         right_ir_val = get_right_lane;
         if (right_ir_val == WHITE)
-            return NULL;
+            return nullptr;
         delay(5);
     }
 
@@ -108,17 +108,17 @@ void *IR_tracer_loop(void *) {
         pthread_t left_ir_thread;
         pthread_t right_ir_thread;
 
-        if (pthread_create(&left_ir_thread, NULL, wait_left_ir_thread, NULL)) {
+        if (pthread_create(&left_ir_thread, nullptr, wait_left_ir_thread, nullptr)) {
             printf("\nFailed to create a thread!\n");
-            return NULL;
+            return nullptr;
         }
 
-        if (pthread_create(&right_ir_thread, NULL, wait_right_ir_thread, NULL)) {
+        if (pthread_create(&right_ir_thread, nullptr, wait_right_ir_thread, nullptr)) {
             printf("\nFailed to create a thread!\n");
-            return NULL;
+            return nullptr;
         }
-        pthread_join(left_ir_thread, NULL);
-        pthread_join(right_ir_thread, NULL);
+        pthread_join(left_ir_thread, nullptr);
+        pthread_join(right_ir_thread, nullptr);
 
         if (left_ir_val == BLACK && right_ir_val == WHITE) {
             raise(LEFT_SIGNAL_NUM);
@@ -127,11 +127,9 @@ void *IR_tracer_loop(void *) {
             raise(RIGHT_SIGNAL_NUM);
         }
         if (left_ir_val == WHITE && right_ir_val == WHITE) {
-//            horizontal_line_counter++;
+            //TODO maybe add stop here
             delay(200);
         }
-
-        //delay(10);
 
     }
 
@@ -140,7 +138,7 @@ void *IR_tracer_loop(void *) {
 void obstacle_signal_handler(int signum) {
     pthread_mutex_lock(&motor_mutex);
     do {
-        int temp = measure_distance(30000);
+        auto temp = static_cast<int>(measure_distance(30000));
         if (temp != 0)
             distance = temp;
         pwmStop();
@@ -181,7 +179,7 @@ long recordPulseLength() {
 void *ultrasonic_loop(void *) {
     printf("\nUltrasonic loop has started!");
     while (1) {
-        int temp = measure_distance(30000);
+        auto temp = static_cast<int>(measure_distance(30000));
         if (temp != 0)
             distance = temp;
         if (distance < 10) {
@@ -194,13 +192,13 @@ void *ultrasonic_loop(void *) {
 int sensor_thread_setup() {
 
     if(ir_tracers_are_on)
-        if (pthread_create(&tracer_thread, NULL, IR_tracer_loop, NULL)) {
+        if (pthread_create(&tracer_thread, nullptr, IR_tracer_loop, nullptr)) {
             printf("Failed to create a thread!");
             exit(-1);
         }
 
     if(ultrasonic_is_on)
-        if (pthread_create(&ultrasonic_thread, NULL, ultrasonic_loop, NULL)) {
+        if (pthread_create(&ultrasonic_thread, nullptr, ultrasonic_loop, nullptr)) {
             printf("Failed to create a thread!");
             exit(-1);
         }

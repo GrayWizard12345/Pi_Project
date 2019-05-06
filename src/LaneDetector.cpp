@@ -51,28 +51,34 @@ cv::Mat LaneDetector::deNoise(cv::Mat inputImage) {
 cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
 
     cv::Mat output;
-    int H, S, V, H2, S2, V2;
-    H = stoi(vars["LANE_DETECTOR_SCALAR_H"]);
-    S = stoi(vars["LANE_DETECTOR_SCALAR_S"]);
-    V = stoi(vars["LANE_DETECTOR_SCALAR_V"]);
+    if(stoi(vars["COLOR_DETECTION"])) {
+        int H, S, V, H2, S2, V2;
+        H = stoi(vars["LANE_DETECTOR_SCALAR_H"]);
+        S = stoi(vars["LANE_DETECTOR_SCALAR_S"]);
+        V = stoi(vars["LANE_DETECTOR_SCALAR_V"]);
 
-    H2 = stoi(vars["LANE_DETECTOR_SCALAR_H2"]);
-    S2 = stoi(vars["LANE_DETECTOR_SCALAR_S2"]);
-    V2 = stoi(vars["LANE_DETECTOR_SCALAR_V2"]);
-    // Convert image from RGB to HSV
-    cv::cvtColor(img_noise, output, cv::COLOR_BGR2HSV);
-    cv::inRange(output, cv::Scalar(H, S, V), cv::Scalar(H2, S2, V2), output);
-//  (20, 100, 100)(20, 50, 50)
+        H2 = stoi(vars["LANE_DETECTOR_SCALAR_H2"]);
+        S2 = stoi(vars["LANE_DETECTOR_SCALAR_S2"]);
+        V2 = stoi(vars["LANE_DETECTOR_SCALAR_V2"]);
+        // Convert image from RGB to HSV
+        cv::cvtColor(img_noise, output, cv::COLOR_BGR2HSV);
+        cv::inRange(output, cv::Scalar(H, S, V), cv::Scalar(H2, S2, V2), output);
 
 //    cv::dilate(output, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size( 3, 3)));
 //    cv::erode(output, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size( 9, 9)));
-    int lowThreshold = 35;
-    int ratio = 3;
-    int kernel_size = 3;
-    cv::Mat blur_mat;
+
+    } else
+    {
+        cv::cvtColor(img_noise, output, cv::COLOR_BGR2GRAY);
+        cv::dilate(output, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9)));
+        imshow("deliate", output);
+    }
     cv::GaussianBlur(output, output, cv::Size(9, 9), 2, 2);
 
 
+    int lowThreshold = 35;
+    int ratio = 3;
+    int kernel_size = 3;
     // Filter the binary image to obtain the edges
     cv::Canny(output, output, lowThreshold, lowThreshold * ratio, kernel_size);
     //printf("\nEdge detector: %d -- %d", output.cols, output.rows);

@@ -23,6 +23,11 @@ Mat frame;
 Mat red_color_frame;
 Mat green_color_frame;
 
+pthread_t video_thread;
+pthread_t tracer_thread;
+pthread_t ultrasonic_thread;
+pthread_t trafficLightThread;
+
 VideoWriter *video;
 
 static int turn;
@@ -46,6 +51,8 @@ int ultrasonic_is_on;
 
 int ir_tracers_are_on;
 
+int del;
+
 void init_vars();
 
 void signalHandler(int signum);
@@ -60,9 +67,6 @@ int main(int argc, char **argv) {
     signal(SIGUSR2, right_interupt);
     signal(SIGRTMIN + 5, obstacle_signal_handler);
 //    signal(ZEBRA_CROSSING_SIGNAL, crosswalk_handler);
-
-
-    pthread_t video_thread;
 
     speed = 80;
     ratio_ = 3;
@@ -97,19 +101,18 @@ int main(int argc, char **argv) {
 
         pthread_mutex_lock(&motor_mutex);
 
-        double turn_speed = speed / ratio_;
-//        if (slope > 0 && slope < 100)
-//            turn_speed = abs(slope - 50) * speed / ratio_;
+        int turn_speed = speed / ratio_;
+
 
         if (turn == Turn::STRAIGHT) {
-            speedLeft = speed - 40;
-            speedRight = speed - 40;
-        } else if (turn == Turn::LEFT) {
+            speedLeft = speed;
             speedRight = speed;
-//            speedLeft = speed / ratio_;
+        } else if (turn == Turn::LEFT) {
+            delay(del);
+            speedRight = speed;
             speedLeft = turn_speed;
         } else if (turn == Turn::RIGHT) {
-//            speedRight = speed / ratio_;
+            delay(del);
             speedRight = turn_speed;
             speedLeft = speed;
         }
@@ -143,7 +146,13 @@ void signalHandler(int signum) {
     video->release();
 
     // Closes all the windows
-    //destroyAllWindows();
+    destroyAllWindows();
+
+    //Destroy all threads
+    pthread_kill(video_thread, 0);
+    pthread_kill(tracer_thread, 0);
+    pthread_kill(ultrasonic_thread, 0);
+    pthread_kill(trafficLightThread, 0);
     exit(signum);
 }
 
@@ -215,11 +224,7 @@ void *video_loop(void *) {
         }
 
         video->write(src);
-//        imshow("Road", res);
 
-
-        //printf("\n%s", turnAsString[turn]);
-        //namedWindow("Hello world");
         if(show_edges) {
             resize(img_edges, img_edges, Size(), 0.6, 0.6);
             imshow("edges", img_edges);
@@ -237,4 +242,5 @@ void init_vars()
     show_edges = stoi(vars["SHOW_EDGES"]);
     ultrasonic_is_on = stoi(vars["ULTRASONIC_ON"]);
     ir_tracers_are_on = stoi(vars["IR_TRACERS_ON"]);
+    del = stoi(vars["BEFORE_TURN_DELAY"]);
 }

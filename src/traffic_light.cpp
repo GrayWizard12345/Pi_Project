@@ -3,7 +3,6 @@
 using namespace cv;
 using namespace std;
 
-pthread_t trafficLightThread;
 
 void *trafficLightLoop(void*) {
     //delay(1000);

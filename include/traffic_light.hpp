@@ -24,6 +24,7 @@ extern cv::Mat frame;
 extern cv::Mat red_color_frame;
 extern cv::Mat green_color_frame;
 extern Status trafficLightStatus;
+extern pthread_t trafficLightThread;
 /**
  *  @brief the thread function for red and green light detection
  */
