@@ -4,6 +4,7 @@
 
 #include "traffic_sign.h"
 
+using namespace cv;
 
 //TODO change the points of ROI
 cv::Mat getTrafficSignROI(cv::Mat bgr) {
@@ -22,8 +23,9 @@ std::vector<cv::Vec3f> getBlueCircles(cv::Mat bgr, int high, int low, int minRad
     cvtColor(bgr, hsv_image, cv::COLOR_BGR2HSV);
 
     cv::Mat blue_hue_range;
-    inRange(hsv_image, cv::Scalar(80, 65, 65), cv::Scalar(140, 255, 255), blue_hue_range);
-    dilate(blue_hue_range, blue_hue_range, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9)));
+    //85 60 60
+    inRange(hsv_image, cv::Scalar(50, 0, 0), cv::Scalar(140, 255, 255), blue_hue_range);
+    //dilate(blue_hue_range, blue_hue_range, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9)));
 
     imshow("Blue", blue_hue_range);
 
@@ -47,6 +49,39 @@ float round(float num, int decimalPlaces) {
     return roundf(num * pow(10, decimalPlaces)) / pow(10, decimalPlaces);
 }
 
+Rect MatchingMethod(cv::Mat img, cv::Mat templ, int match_method) {
+    Mat img_display;
+    img.copyTo(img_display);
+
+    int result_cols = img.cols - templ.cols + 1;
+    int result_rows = img.rows - templ.rows + 1;
+
+    Mat result;
+    result.create(result_rows, result_cols, CV_32FC1);
+
+    matchTemplate(img, templ, result, match_method);
+
+    normalize(result, result, 0, 1, NORM_MINMAX, -1, Mat());
+
+    double minVal;
+    double maxVal;
+    Point minLoc;
+    Point maxLoc;
+    Point matchLoc;
+
+    minMaxLoc(result, &minVal, &maxVal, &minLoc, &maxLoc, Mat());
+
+    if (match_method == TM_SQDIFF || match_method == TM_SQDIFF_NORMED) {
+        matchLoc = minLoc;
+    } else {
+        matchLoc = maxLoc;
+    }
+
+    Rect rect(matchLoc, Point(matchLoc.x + templ.cols, matchLoc.y + templ.rows));
+
+    return rect;
+}
+
 ArrowDirection isArrowDetected(cv::Mat circleROI) {
     static int index = 0;
     index++;
@@ -62,49 +97,14 @@ ArrowDirection isArrowDetected(cv::Mat circleROI) {
 
     cv::Mat edges;
     cv::Canny(arrow, edges, 50, 150);
+    cv::blur(edges, edges, cv::Size(3, 3));
     imshow(std::to_string(index) + "Canny", edges);
     cvWaitKey(0);
 
-    std::vector<cv::Vec2f> lines;
-    HoughLines(edges, lines, 1, CV_PI / 180, 50);
-
-    int left[] = {0, 0};
-    int right[] = {0, 0};
-    int up[] = {0, 0};
-    int down[] = {0, 0};
-
-    printf("%d lines size %d\n", index, lines.size());
-
-    for (size_t i = 0; i < lines.size(); i++) {
-
-        float rho = lines[i][0], theta = lines[i][1];
-
-        printf("rho - %d theta - %d\n", rho, theta);
-
-        //cases for right/left arrows
-        if ((round(theta, 2) >= 1.0 && round(theta, 2) <= 1.1) ||
-            (round(theta, 2) >= 2.0 and round(theta, 2) <= 2.1)) {
-            if (rho >= 20 and rho <= 30)
-                left[0] += 1;
-            else if (rho >= 60 and rho <= 65)
-                left[1] += 1;
-            else if (rho >= -73 and rho <= -57)
-                right[0] += 1;
-            else if (rho >= 148 and rho <= 176)
-                right[1] += 1;
-        } else if ((round(theta, 2) >= 0.4 && round(theta, 2) <= 0.6) ||
-                   (round(theta, 2) >= 2.6 && round(theta, 2) <= 2.7)) {
-            if (rho >= -63 and rho <= -15)
-                up[0] += 1;
-            else if (rho >= 67 and rho <= 74) {
-                down[1] += 1;
-                up[1] += 1;
-            } else if (rho >= 160 and rho <= 171)
-                down[0] += 1;
-        }
-    }
-
     //region With HoughLinesP
+    std::vector<cv::Vec4i> lines;
+    HoughLinesP(edges, lines, 1, CV_PI / 180, 30, 30, 10);
+
     cv::Point ini;
     cv::Point fini;
 
@@ -116,22 +116,15 @@ ArrowDirection isArrowDetected(cv::Mat circleROI) {
         double slope = (static_cast<double>(fini.y) - static_cast<double>(ini.y)) /
                        (static_cast<double>(fini.x) - static_cast<double>(ini.x) + 0.00001);
 
-        printf("%lf\t", slope);
+        cv::line(circleROI, ini, fini, cv::Scalar(0, 0, 255), 3, cv::LINE_AA);
 
+        printf("%lf\t", slope);
 
     }
     //endregion
 
     ArrowDirection turn = NO_ARROW;
 
-    if (left[0] >= 1 and left[1] >= 1)
-        turn = LEFT_ARROW;
-    else if (right[0] >= 1 and right[1] >= 1)
-        turn = RIGHT_ARROW;
-    else if (up[0] >= 1 and up[1] >= 1)
-        turn = UP_ARROW;
-    else if (down[0] >= 1 and down[1] >= 1)
-        turn = DOWN_ARROW;
 
     printf("turn %d %d\n\n\n", index, turn);
 

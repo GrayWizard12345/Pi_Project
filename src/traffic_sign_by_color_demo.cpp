@@ -50,6 +50,7 @@ int main(int argc, char **argv) {
 
         std::vector<cv::Vec3f> circles = getBlueCircles(bgr);
 
+
         printf("detected circles size %d\n", circles.size());
 
         for (size_t i = 0; i < circles.size(); i++) {
@@ -65,6 +66,7 @@ int main(int argc, char **argv) {
 
                 Mat circleROI(bgr, circleBox);
 
+                //region Image Manipulation
                 /*
                 Mat black = Mat::zeros(circleBox.size(), CV_8UC3);
                 circle(black, Point(radius,radius), radius, Scalar::all(255), -1);
@@ -80,25 +82,28 @@ int main(int argc, char **argv) {
                 imshow("Gray", gray);
                 imshow("Arrow", arrow);
                  */
+                //endregion
 
-                cascadeUtil.setDetectionArea(circleROI);
-                cascadeUtil.detectAllCircleBlueSigns();
-
-                for (unsigned j = 0; j < cascadeUtil.parking.size(); j++) {
-                    rectangle(bgr, cascadeUtil.parking[j], yellow, 2, 1);
-                    putText(bgr, "parking", Point(50, 90), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
-                }
-
-                for (unsigned k = 0; k < cascadeUtil.left_.size(); k++){
-                    rectangle(bgr, cascadeUtil.left_[k], green, 2, 1);
-                    putText(bgr, "left", Point(50, 110), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
-                }
-
-
-                for (unsigned n = 0; n < cascadeUtil.right_.size(); n++){
-                    rectangle(bgr, cascadeUtil.right_[n], purple, 2, 1);
-                    putText(bgr, "right", Point(50, 150), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
-                }
+                //region Cascade
+//                cascadeUtil.setDetectionArea(circleROI);
+//                cascadeUtil.detectAllCircleBlueSigns();
+//
+//                for (unsigned j = 0; j < cascadeUtil.parking.size(); j++) {
+//                    rectangle(bgr, cascadeUtil.parking[j], yellow, 2, 1);
+//                    putText(bgr, "parking", Point(50, 90), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+//                }
+//
+//                for (unsigned k = 0; k < cascadeUtil.left_.size(); k++){
+//                    rectangle(bgr, cascadeUtil.left_[k], green, 2, 1);
+//                    putText(bgr, "left", Point(50, 110), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+//                }
+//
+//
+//                for (unsigned n = 0; n < cascadeUtil.right_.size(); n++){
+//                    rectangle(bgr, cascadeUtil.right_[n], purple, 2, 1);
+//                    putText(bgr, "right", Point(50, 150), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+//                }
+                //endregion
 
             } else {
                 printf("outside\n");

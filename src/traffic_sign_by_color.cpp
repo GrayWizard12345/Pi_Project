@@ -20,6 +20,10 @@ int main(int argc, char **argv) {
     Mat bgr = imread(argv[1], IMREAD_COLOR);
 
     Mat roi = getTrafficSignROI(bgr);
+    Mat templ = imread("/media/madina/Files/Projects/opencv/Pi_Project/src/templates/arrow_left2.png", IMREAD_COLOR);
+
+    imshow("templ", templ);
+
 
     CascadeUtil cascadeUtil;
 
@@ -44,19 +48,11 @@ int main(int argc, char **argv) {
 
             Mat circleROI(roi, circleBox);
 
-            cascadeUtil.setDetectionArea(circleROI);
-            cascadeUtil.detectAllCircleBlueSigns();
+            Rect rect = MatchingMethod(circleROI, templ);
 
-
-            for (unsigned k = 0; k < cascadeUtil.left_.size(); k++) {
-                rectangle(roi, cascadeUtil.left_[k], green, 2, 1);
-                putText(roi, "left", Point(50, 110), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
-            }
-
-
-            for (unsigned n = 0; n < cascadeUtil.right_.size(); n++) {
-                rectangle(roi, cascadeUtil.right_[n], purple, 2, 1);
-                putText(roi, "right", Point(50, 150), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+            if (isWithMat(rect, circleROI)) {
+                rectangle(circleROI, rect, pink);
+                imshow("circle ROI", circleROI);
             }
 
         } else {
@@ -66,8 +62,8 @@ int main(int argc, char **argv) {
         imshow("ROI", roi);
     }
 
-//    namedWindow("Original", WINDOW_AUTOSIZE);
-//    imshow("Original", bgr);
+    namedWindow("Original", WINDOW_AUTOSIZE);
+    imshow("Original", bgr);
 
 
     waitKey(0);

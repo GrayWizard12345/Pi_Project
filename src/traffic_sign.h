@@ -19,7 +19,9 @@ enum ArrowDirection{
 
 cv::Mat getTrafficSignROI(cv::Mat bgr);
 
-std::vector<cv::Vec3f> getBlueCircles(cv::Mat bgr, int high = 100, int low = 15, int minRadius = 30, int maxRadius = 100);
+cv::Rect MatchingMethod(cv::Mat img, cv::Mat templ, int match_method =  cv::TM_CCORR_NORMED);
+
+std::vector<cv::Vec3f> getBlueCircles(cv::Mat bgr, int high = 100, int low = 15, int minRadius = 60, int maxRadius = 100);
 
 /**
  * @brief checks whether the rectangle is within Mat
