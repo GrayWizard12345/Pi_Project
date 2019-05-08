@@ -6,7 +6,6 @@ BEFORE_TURN_DELAY = 0
 #Edge detection Configurations
 
 COLOR_DETECTION = 0
-
 #Night Mode
 #LANE_DETECTOR_SCALAR_H = 10
 #LANE_DETECTOR_SCALAR_S = 150

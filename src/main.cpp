@@ -27,6 +27,7 @@ pthread_t video_thread;
 pthread_t tracer_thread;
 pthread_t ultrasonic_thread;
 pthread_t trafficLightThread;
+pthread_t crosswalk_thread;
 
 VideoWriter *video;
 
@@ -52,6 +53,8 @@ int ultrasonic_is_on;
 int ir_tracers_are_on;
 
 int del;
+
+bool crosswalk_detected = true;
 
 void init_vars();
 
@@ -138,21 +141,24 @@ void signalHandler(int signum) {
     // cleanup and close up stuff here
     // terminate program
     printf("CNTR+C");
-
     pwmStop();
     stopDCMotor();
-
-    capture.release();
-    video->release();
-
-    // Closes all the windows
-    destroyAllWindows();
-
     //Destroy all threads
     pthread_kill(video_thread, 0);
     pthread_kill(tracer_thread, 0);
     pthread_kill(ultrasonic_thread, 0);
     pthread_kill(trafficLightThread, 0);
+
+    // Closes all the windows
+    destroyAllWindows();
+
+    capture.release();
+    video->release();
+
+    pwmStop();
+    stopDCMotor();
+
+
     exit(signum);
 }
 
@@ -189,11 +195,18 @@ void *video_loop(void *) {
     int height = src.size().height;
     cout << "Width:" << width << endl;
     frame = src;
+
     delay(1000);
-    double left_slope;
-    double right_slope;
+
     video = new VideoWriter("outcpp.avi", CV_FOURCC('M', 'J', 'P', 'G'), 7, Size(width, height));
-   
+
+    //Crosswalk detection thread
+    if(pthread_create(&crosswalk_thread, nullptr, look_for_cross_walk, (void*)&img_mask))
+    {
+        printf("\nError wile creating crosswalk thread!\n");
+        exit(-1);
+    }
+
     while (true) {
 
 //        pthread_mutex_lock(&frame_mutex);
@@ -212,8 +225,6 @@ void *video_loop(void *) {
 
             double vanish_x = laneDetector.predictTurn(turn);
 
-
-
             double full = img_mask.cols;
             slope = vanish_x * 100 / full;
 
@@ -228,6 +239,7 @@ void *video_loop(void *) {
         if(show_edges) {
             resize(img_edges, img_edges, Size(), 0.6, 0.6);
             imshow("edges", img_edges);
+//            imshow("mask", img_mask);
         }
         waitKey(1);
 //        pthread_mutex_unlock(&frame_mutex);

@@ -40,6 +40,9 @@ enum Turn {
     RIGHT
 };
 
+extern int speed;
+extern bool crosswalk_detected;
+extern int ir_tracers_are_on;
 
 /**
  *@brief Definition of the LaneDetector class. It contains all the functions and variables depicted in the
@@ -74,6 +77,6 @@ public:
 
 
     double predictTurn(int &output);
-
-    unsigned long look_for_cross_walk(cv::Mat &src);
 };
+
+void* look_for_cross_walk(void*);

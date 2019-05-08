@@ -11,10 +11,19 @@ void *trafficLightLoop(void*) {
     delay(1000);
     printf("\nTraffic light thread - width: %d\n", frame.size().width);
     Rect rec((1280 * 3) / 4, 0, 1280 / 4, 960 / 2);
+    Rect rect2(0, 0, 1280 / 4, 960 / 2);
     int circleCount = 0;
     while (1) {
 
         Mat rightTopBgr = frame(rec);
+        Mat leftTopBgr = frame(rec);
+        int rows = rightTopBgr.rows;
+        int cols = rightTopBgr.cols * 2;
+        Mat3b roi(rows, cols, Vec3b(0,0,0));
+
+        leftTopBgr.copyTo(roi(Rect(0,0, rows, cols)));
+        rightTopBgr.copyTo(roi(Rect((1280 * 3) / 4, 0, rows, cols)));
+
         Mat hsv;
         cvtColor(rightTopBgr, hsv, COLOR_BGR2HSV);
 

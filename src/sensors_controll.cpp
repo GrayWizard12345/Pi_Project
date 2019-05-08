@@ -63,7 +63,7 @@ void left_interupt(int sig) {
     delay(100);
     pwm_left_point_turn(speed);
     while (!get_left_lane);
-    delay(150);
+    delay(175);
     //pwmStop();
     pthread_mutex_unlock(&motor_mutex);
 
@@ -76,7 +76,7 @@ void right_interupt(int sig) {
     delay(100);
     pwm_right_point_turn(speed);
     while (!get_right_lane);
-    delay(150);
+    delay(175);
     //pwmStop();
     pthread_mutex_unlock(&motor_mutex);
 }
@@ -121,14 +121,19 @@ void *IR_tracer_loop(void *) {
         pthread_join(right_ir_thread, nullptr);
 
         if (left_ir_val == BLACK && right_ir_val == WHITE) {
-            raise(LEFT_SIGNAL_NUM);
+            if(ir_tracers_are_on)
+                raise(LEFT_SIGNAL_NUM);
         }
         if (left_ir_val == WHITE && right_ir_val == BLACK) {
-            raise(RIGHT_SIGNAL_NUM);
+            if(ir_tracers_are_on)
+                raise(RIGHT_SIGNAL_NUM);
         }
         if (left_ir_val == WHITE && right_ir_val == WHITE) {
             //TODO maybe add stop here
-            delay(200);
+            pthread_mutex_lock(&motor_mutex);
+            pwmStop();
+            delay(400);
+            pthread_mutex_unlock(&motor_mutex);
         }
 
     }
@@ -184,23 +189,24 @@ void *ultrasonic_loop(void *) {
             distance = temp;
         if (distance < 10) {
             printf("\nObstacle detected!!");
-            raise(SIGRTMIN + 5);
+            if(ultrasonic_is_on)
+                raise(SIGRTMIN + 5);
         }
     }
 }
 
 int sensor_thread_setup() {
 
-    if(ir_tracers_are_on)
-        if (pthread_create(&tracer_thread, nullptr, IR_tracer_loop, nullptr)) {
-            printf("Failed to create a thread!");
-            exit(-1);
-        }
 
-    if(ultrasonic_is_on)
-        if (pthread_create(&ultrasonic_thread, nullptr, ultrasonic_loop, nullptr)) {
-            printf("Failed to create a thread!");
-            exit(-1);
-        }
+    if (pthread_create(&tracer_thread, nullptr, IR_tracer_loop, nullptr)) {
+        printf("Failed to create a thread!");
+        exit(-1);
+    }
+
+
+    if (pthread_create(&ultrasonic_thread, nullptr, ultrasonic_loop, nullptr)) {
+        printf("Failed to create a thread!");
+        exit(-1);
+    }
 
 }

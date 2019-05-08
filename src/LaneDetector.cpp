@@ -23,6 +23,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *@brief with the plot of the detected lanes and the turn prediction.
  */
 
+#include <wiringPi.h>
 #include "../include/LaneDetector.hpp"
 #include "../include/config_reader.h"
 using namespace cv;
@@ -129,7 +130,7 @@ std::vector<std::vector<cv::Vec4i> > LaneDetector::lineSeparation(std::vector<cv
     size_t j = 0;
     cv::Point ini;
     cv::Point fini;
-    double slope_thresh = 0.17;     //TODO changed from 0.3
+    double slope_thresh = 0.3;     //TODO changed from 0.3
     std::vector<double> slopes;
     std::vector<cv::Vec4i> selected_lines;
     std::vector<cv::Vec4i> right_lines, left_lines;
@@ -314,7 +315,7 @@ int LaneDetector::plotLane(cv::Mat inputImage, std::vector<cv::Point> lane, std:
     cv::line(inputImage, lane[0], lane[1], cv::Scalar(0, 255, 255), 5, CV_AA);
     cv::line(inputImage, lane[2], lane[3], cv::Scalar(0, 255, 255), 5, CV_AA);
 
-    double vanish_x = static_cast<double>(((right_m*right_b.x) - (left_m*left_b.x) - right_b.y + left_b.y) / (right_m - left_m));
+    auto vanish_x = static_cast<double>(((right_m*right_b.x) - (left_m*left_b.x) - right_b.y + left_b.y) / (right_m - left_m));
     line(inputImage, Point(vanish_x, inputImage.rows / 2 - 10), Point(vanish_x, inputImage.rows / 2 + 10), Scalar(250, 255, 255), 25, CV_AA);
 
     // Plot the turn message
@@ -328,91 +329,81 @@ int LaneDetector::plotLane(cv::Mat inputImage, std::vector<cv::Point> lane, std:
     return 0;
 }
 
-unsigned long LaneDetector::look_for_cross_walk(cv::Mat &src) {
-/*
-    cv::Point ini;
-    cv::Point fini;
-    double slope_thresh = 1.5;     //TODO changed from 0.3
-    std::vector<double> slopes;
-    std::vector<cv::Vec4i> selected_lines;
-    std::vector<cv::Point> poly_points;
-    int c = 0;
-    // Calculate the slope of all the detected lines
-    for (auto i : houghLines) {
-        ini = cv::Point(i[0], i[1]);
-        fini = cv::Point(i[2], i[3]);
+void* look_for_cross_walk(void* mat) {
 
-        // Basic algebra: slope = (y1 - y0)/(x1 - x0)
-        double slope = (static_cast<double>(fini.y) - static_cast<double>(ini.y)) /
-                       (static_cast<double>(fini.x) - static_cast<double>(ini.x) + 0.00001);
+    delay(3000);
 
-        // If the slope is too horizontal, discard the line
-        // If not, save them  and their respective slope
 
-        if (std::abs(slope) > slope_thresh) {
-            //printf("%lf\n", slope);
-            slopes.push_back(slope);
-            selected_lines.push_back(i);
-            cv::line(src, ini, fini, cv::Scalar(245, 40, c += 20), 5, CV_AA);
+    Mat crosswalk = *(Mat*)mat;
+
+    cout << crosswalk.cols << endl;
+
+    while(true) {
+
+
+        Mat crosswalk_grayscale;
+
+        cvtColor(crosswalk, crosswalk_grayscale, COLOR_RGB2GRAY);
+        GaussianBlur(crosswalk_grayscale, crosswalk_grayscale, cv::Size(9, 9), 2, 2);
+        dilate(crosswalk_grayscale, crosswalk_grayscale, getStructuringElement(MORPH_RECT, Size(3, 3)));
+
+        inRange(crosswalk_grayscale, Scalar(140), Scalar(255), crosswalk_grayscale);
+
+        erode(crosswalk_grayscale, crosswalk_grayscale, getStructuringElement(MORPH_ELLIPSE, Size(3, 3)));
+        blur(crosswalk_grayscale, crosswalk_grayscale, cv::Size(3, 3));
+
+        erode(crosswalk_grayscale, crosswalk_grayscale, getStructuringElement(MORPH_RECT, Size(9, 9)));
+
+        int lowThreshold = 30;
+        int ratio = 3;
+        int kernel_size = 3;
+        cv::Canny(crosswalk_grayscale, crosswalk_grayscale, lowThreshold, lowThreshold * ratio, kernel_size);
+        dilate(crosswalk_grayscale, crosswalk_grayscale, getStructuringElement(MORPH_ELLIPSE, Size(2, 2)));
+
+//    imshow("Processed", crosswalk_grayscale);
+
+        vector<Vec4i> lines;
+        int counter = 0;
+        Vec4d lane;
+        vector<Point> horizontals;
+        HoughLinesP(crosswalk_grayscale, lines, 1, CV_PI / 180, 20, 40, 30);
+
+        for (auto p:lines) {
+            Point ini = cv::Point(p[0], p[1]);
+            Point fini = cv::Point(p[2], p[3]);
+
+            if (abs(p[1] - p[3]) < 15) {
+                horizontals.push_back(ini);
+                horizontals.push_back(fini);
+                line(crosswalk, ini, fini, cv::Scalar(0, 0, 255), 3);
+                counter++;
+            }
         }
-        //printf("Num of lines: %lu\n" ,selected_lines.size());
-        if (selected_lines.size() > 15)
-            return selected_lines.size();
-    }
 
-    return selected_lines.size();
-*/
-    Mat crosswalk_g;
-    Mat crosswalk;
-    cvtColor(src, crosswalk_g, COLOR_RGB2GRAY);
-    cvtColor(crosswalk_g, src, COLOR_GRAY2BGR);
-    cvtColor(src, crosswalk, COLOR_RGB2HSV);
-    inRange(crosswalk, Scalar(0, 0, 215) ,Scalar(255, 50, 255),crosswalk);
+        if (!horizontals.empty()) {
+            fitLine(horizontals, lane, CV_DIST_L2, 0, 0.01, 0.01);
+            auto x0 = static_cast<int>(lane[2]);                       // a point on the line
+            auto y0 = static_cast<int>(lane[3]);
+            auto x1 = static_cast<int>(x0 - 200 * lane[0]);     // add a vector of length 200
+            auto y1 = static_cast<int>(y0 - 200 * lane[1]);   // using the unit vector
+            line(crosswalk, cv::Point(x0, y0), cv::Point(x1, y1), cv::Scalar(0), 3);
 
-//    GaussianBlur(crosswalk, crosswalk, cv::Size(3, 3), 0, 0);
-    blur(crosswalk, crosswalk, cv::Size(3, 3));
+            if (abs(lane[1] / lane[0]) < 0.4 && counter >= 8) {
+                crosswalk_detected = true;
+            } else {
+                crosswalk_detected = false;
+            }
 
-    int lowThreshold = 35;
-    int ratio = 3;
-    int kernel_size = 3;
-    cv::Canny(crosswalk, crosswalk, lowThreshold, lowThreshold * ratio, kernel_size);
+            if (crosswalk_detected) {
+                int temp = speed;
+                ir_tracers_are_on = false;
+                speed = speed / 2;
+                delay(3000);
+                speed = temp;
+                ir_tracers_are_on = true;
+            }
 
-    vector<vector<Point>> contours;
-    vector<Point> approx;
-    std::vector<cv::Vec4i> hierarchy;
-    cv::findContours(crosswalk,contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-
-
-    cv::Mat drawing = cv::Mat::zeros( crosswalk.size(), CV_8UC3 );
-    int counter = 0;
-    for( int i = 0; i< contours.size(); i++ )
-    {
-        cv::Scalar color = cv::Scalar(0, 100, 0);
-        drawContours( drawing, contours, i, color, 1, 8, hierarchy, 0, cv::Point() );
-
-        approxPolyDP(contours[i], approx, arcLength(Mat(contours[i]), true)*0.06, true);
-        if (approx.size() == 4){
-
-            cv::line(src, approx[0], approx[1], cv::Scalar(0,255,0));
-            cv::line(src, approx[1], approx[2], cv::Scalar(0,255,0));
-            cv::line(src, approx[2], approx[3], cv::Scalar(0,255,0));
-            cv::line(src, approx[3], approx[0], cv::Scalar(0,255,0));
-
-            cv::line(drawing, approx[0], approx[1], cv::Scalar(255,255,0));
-            cv::line(drawing, approx[1], approx[2], cv::Scalar(255,255,0));
-            cv::line(drawing, approx[2], approx[3], cv::Scalar(255,255,0));
-            cv::line(drawing, approx[3], approx[0], cv::Scalar(255,255,0));
-
-            counter++;
         }
+
     }
-
-    if(counter >= 4)
-        putText(crosswalk, "CrossWalk detected - r#:" + to_string(counter), Point(50,100), cv::FONT_HERSHEY_COMPLEX_SMALL, 1, cvScalar(255, 0, 0), 1, CV_AA);
-    cout << counter;
-    imshow("drawing", drawing);
-    imshow("Looking here", src);
-
-
 }
-
