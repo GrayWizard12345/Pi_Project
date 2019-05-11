@@ -13,6 +13,8 @@
 
 #include <math.h>
 
+using cv::Mat;
+
 enum ArrowDirection{
     NO_ARROW = -1, UP_ARROW, DOWN_ARROW, RIGHT_ARROW, LEFT_ARROW
 };
@@ -31,7 +33,10 @@ std::vector<cv::Vec3f> getBlueCircles(cv::Mat bgr, int high = 100, int low = 15,
  */
 bool isWithMat(cv::Rect circleBox, cv::Mat bgr);
 
+cv::Mat getRedMask(cv::Mat roi);
 
 ArrowDirection isArrowDetected(cv::Mat bgr);
+
+cv::Mat convertToYCrCb(cv::Mat src);
 
 #endif //PI_PROJECT_TRAFFIC_SIGN_H

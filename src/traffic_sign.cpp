@@ -9,8 +9,7 @@ using namespace cv;
 //TODO change the points of ROI
 cv::Mat getTrafficSignROI(cv::Mat bgr) {
 
-
-    cv::Rect roiBox(0, bgr.rows / 6, bgr.cols, bgr.rows / 4);
+    cv::Rect roiBox(0, bgr.rows / 7, bgr.cols, bgr.rows / 4);
 
     cv::Mat roi(bgr, roiBox);
 
@@ -34,6 +33,24 @@ std::vector<cv::Vec3f> getBlueCircles(cv::Mat bgr, int high, int low, int minRad
                  maxRadius);
 
     return circles;
+}
+
+Mat getRedMask(Mat roi) {
+    cv::Mat hsv_image;
+    cvtColor(roi, hsv_image, cv::COLOR_BGR2HSV);
+
+    cv::Mat lower_hue, upper_hue;
+    inRange(hsv_image, Scalar(0, 120, 70), Scalar(10, 255, 255), lower_hue);
+    inRange(hsv_image, Scalar(170, 120, 70), Scalar(180, 255, 255), upper_hue);
+
+    Mat red_hue_image;
+    //use hue values from the both ranges (masks)
+    addWeighted(lower_hue, 1.0, upper_hue, 1.0, 0.0, red_hue_image);
+    erode(red_hue_image, red_hue_image, getStructuringElement(MORPH_ELLIPSE, Size(9, 9)));
+    dilate(red_hue_image, red_hue_image, getStructuringElement(MORPH_ELLIPSE, Size(3, 3)));
+    GaussianBlur(red_hue_image, red_hue_image, cv::Size(9, 9), 2, 2);
+
+    return red_hue_image;
 }
 
 bool isWithMat(cv::Rect circleBox, cv::Mat bgr) {
@@ -80,53 +97,4 @@ Rect MatchingMethod(cv::Mat img, cv::Mat templ, int match_method) {
     Rect rect(matchLoc, Point(matchLoc.x + templ.cols, matchLoc.y + templ.rows));
 
     return rect;
-}
-
-ArrowDirection isArrowDetected(cv::Mat circleROI) {
-    static int index = 0;
-    index++;
-
-    cv::Mat gray;
-    cvtColor(circleROI, gray, cv::COLOR_RGB2GRAY);
-
-    //image processing for better accuracy
-    dilate(gray, gray, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(6, 6)));
-    cv::Mat arrow;
-    inRange(gray, 100, 255, arrow);
-    erode(arrow, arrow, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(6, 6)));
-
-    cv::Mat edges;
-    cv::Canny(arrow, edges, 50, 150);
-    cv::blur(edges, edges, cv::Size(3, 3));
-    imshow(std::to_string(index) + "Canny", edges);
-    cvWaitKey(0);
-
-    //region With HoughLinesP
-    std::vector<cv::Vec4i> lines;
-    HoughLinesP(edges, lines, 1, CV_PI / 180, 30, 30, 10);
-
-    cv::Point ini;
-    cv::Point fini;
-
-    for (auto i : lines) {
-        ini = cv::Point(i[0], i[1]);
-        fini = cv::Point(i[2], i[3]);
-
-        // Basic algebra: slope = (y1 - y0)/(x1 - x0)
-        double slope = (static_cast<double>(fini.y) - static_cast<double>(ini.y)) /
-                       (static_cast<double>(fini.x) - static_cast<double>(ini.x) + 0.00001);
-
-        cv::line(circleROI, ini, fini, cv::Scalar(0, 0, 255), 3, cv::LINE_AA);
-
-        printf("%lf\t", slope);
-
-    }
-    //endregion
-
-    ArrowDirection turn = NO_ARROW;
-
-
-    printf("turn %d %d\n\n\n", index, turn);
-
-    return turn;
 }
