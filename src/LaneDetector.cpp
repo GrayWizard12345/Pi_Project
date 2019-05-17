@@ -71,12 +71,10 @@ cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
     } else
     {
         cv::cvtColor(img_noise, output, cv::COLOR_BGR2GRAY);
-        cv::dilate(output, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9)));
+//        cv::dilate(output, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
 //        imshow("deliate", output);
     }
     cv::GaussianBlur(output, output, cv::Size(9, 9), 2, 2);
-
-
     int lowThreshold = 35;
     int ratio = 3;
     int kernel_size = 3;
@@ -95,7 +93,7 @@ cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
 cv::Mat LaneDetector::mask(cv::Mat img_edges) {
     cv::Mat output;
     int y = stoi(vars["ROI_Y"]);
-    cv::Rect rect(0, y, 1280, 960 - y);
+    cv::Rect rect(0, y, width, height - y);
 
     output = img_edges(rect);
 
@@ -241,8 +239,8 @@ LaneDetector::regression(std::vector<std::vector<cv::Vec4i> > left_right_lines, 
 
     // One the slope and offset points have been obtained, apply the line equation to obtain the line points
 //    int ini_y = inputImage.rows;
-    int ini_y = 960;
-    int fin_y = 470;
+    int ini_y = height;
+    int fin_y = height / 2;
 //    int fin_y = inputImage.cols;
 
     double right_ini_x = ((ini_y - right_b.y) / right_m) + right_b.x;
@@ -319,7 +317,7 @@ int LaneDetector::plotLane(cv::Mat inputImage, std::vector<cv::Point> lane, std:
     line(inputImage, Point(vanish_x, inputImage.rows / 2 - 10), Point(vanish_x, inputImage.rows / 2 + 10), Scalar(250, 255, 255), 25, CV_AA);
 
     // Plot the turn message
-    resize(inputImage, inputImage, Size(), 0.6, 0.6);
+//    resize(inputImage, inputImage, Size(), 0.6, 0.6);
     cv::putText(inputImage, turn, cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
 
     // Show the final output image
@@ -360,7 +358,7 @@ void* look_for_cross_walk(void* mat) {
         cv::Canny(crosswalk_grayscale, crosswalk_grayscale, lowThreshold, lowThreshold * ratio, kernel_size);
         dilate(crosswalk_grayscale, crosswalk_grayscale, getStructuringElement(MORPH_ELLIPSE, Size(2, 2)));
 
-    imshow("Processed", crosswalk_grayscale);
+        imshow("Processed", crosswalk_grayscale);
 
         vector<Vec4i> lines;
         int counter = 0;

@@ -43,6 +43,8 @@ enum Turn {
 extern int speed;
 extern bool crosswalk_detected;
 extern int ir_tracers_are_on;
+extern int width;
+extern int height;
 
 /**
  *@brief Definition of the LaneDetector class. It contains all the functions and variables depicted in the

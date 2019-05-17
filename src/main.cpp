@@ -56,6 +56,14 @@ int del;
 
 bool crosswalk_detected = true;
 
+int obstacle_avoidance_turn_delay;
+
+int obstacle_avoidance_go_dalay;
+
+int width;
+
+int height;
+
 void init_vars();
 
 void signalHandler(int signum);
@@ -191,9 +199,7 @@ void *video_loop(void *) {
     capture.grab(); //grab the scene using raspicam
     capture.retrieve(src); // retrieve the captured scene as an image and store it in matrix container
 
-//    resize(src, src, Size(640, 480));
-    int width = src.size().width;
-    int height = src.size().height;
+    resize(src, src, Size(640, 480));
     cout << "Width:" << width << endl;
     frame = src;
 
@@ -213,6 +219,7 @@ void *video_loop(void *) {
 //        pthread_mutex_lock(&frame_mutex);
         capture.grab(); //grab the scene using raspicam
         capture.retrieve(src); // retrieve the captured scene as an image and store it in matrix container
+        resize(src, src, Size(640, 480));
         frame = src;
         
         img_mask = laneDetector.mask(src);
@@ -227,7 +234,7 @@ void *video_loop(void *) {
             double vanish_x = laneDetector.predictTurn(turn);
 
             double full = img_mask.cols;
-            slope = vanish_x * 300 / full;
+            slope = vanish_x * 100 / full;
 
             laneDetector.plotLane(src, lane, turnAsString[turn] + " " + to_string(slope), "Lane Detection");
 
@@ -238,11 +245,10 @@ void *video_loop(void *) {
         video->write(src);
 
         if(show_edges) {
-            resize(img_edges, img_edges, Size(), 0.6, 0.6);
             imshow("edges", img_edges);
 //            imshow("mask", img_mask);
         }
-        waitKey(1);
+        cvWaitKey(1);
 //        pthread_mutex_unlock(&frame_mutex);
     }
 }
@@ -256,4 +262,8 @@ void init_vars()
     ultrasonic_is_on = stoi(vars["ULTRASONIC_ON"]);
     ir_tracers_are_on = stoi(vars["IR_TRACERS_ON"]);
     del = stoi(vars["BEFORE_TURN_DELAY"]);
+    obstacle_avoidance_turn_delay = stoi(vars["OBSTACLE_AVOIDANCE_TURN_DELAY"]);
+    obstacle_avoidance_go_dalay = stoi(vars["OBSTACLE_AVOIDANCE_GO_DELAY"]);
+    width = stoi(vars["WIDTH"]);
+    height = stoi(vars["HEIGHT"]);
 }

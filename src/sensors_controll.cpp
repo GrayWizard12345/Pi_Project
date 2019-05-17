@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include "opencv2/opencv.hpp"
 #include "opencv2/opencv.hpp"
+#include "../include/LaneDetector.hpp"
 
 
 using namespace std;
@@ -38,10 +39,13 @@ extern int speed;
 extern int ultrasonic_is_on;
 extern int ir_tracers_are_on;
 extern Mat src;
+extern int obstacle_avoidance_turn_delay;
+extern int obstacle_avoidance_go_dalay;
 
 int left_ir_val;
 int right_ir_val;
-int distance = 0;
+int dist = 0;
+int last_turn = 0;
 
 pthread_mutex_t motor_mutex;
 extern pthread_t tracer_thread;
@@ -152,10 +156,11 @@ void obstacle_signal_handler(int signum) {
     do {
         auto temp = static_cast<int>(measure_distance(30000));
         if (temp != 0)
-            distance = temp;
+            dist = temp;
         pwmStop();
+        check_if_suddent_pedestrian();
         delay(100);
-    } while (distance < 10);
+    } while (dist < 10);
     pthread_mutex_unlock(&motor_mutex);
 }
 
@@ -193,11 +198,13 @@ void *ultrasonic_loop(void *) {
     while (1) {
         auto temp = static_cast<int>(measure_distance(30000));
         if (temp != 0)
-            distance = temp;
-        if (distance < 10) {
-            printf("\nObstacle detected!!");
-            if(ultrasonic_is_on)
+            dist = temp;
+        if (dist < 10) {
+            if (ultrasonic_is_on)
+            {
                 raise(SIGRTMIN + 5);
+                printf("\nObstacle detected!!");
+            }
         }
     }
 }
@@ -218,7 +225,51 @@ int sensor_thread_setup() {
 
 }
 
+
+void obstacle_avoidance()
+{
+    ir_tracers_are_on = 0;
+    switch (last_turn){
+        case STRAIGHT:
+
+            pwm_right_point_turn(speed);
+            delay(obstacle_avoidance_turn_delay);
+
+            pwm_go_smooth(speed, speed);
+            delay(obstacle_avoidance_go_dalay);
+
+            pwm_left_point_turn(obstacle_avoidance_turn_delay);
+            delay(obstacle_avoidance_turn_delay);
+
+            pwm_go_smooth(speed, speed);
+            delay(obstacle_avoidance_go_dalay);
+
+            pwm_left_point_turn(obstacle_avoidance_turn_delay);
+            delay(obstacle_avoidance_turn_delay);
+
+            pwm_go_smooth(speed, speed);
+            delay(obstacle_avoidance_go_dalay);
+
+            pwm_right_point_turn(speed);
+            delay(obstacle_avoidance_turn_delay);
+
+            last_turn = RIGHT;
+            break;
+        case LEFT:
+
+            break;
+
+        case RIGHT:
+
+            break;
+    }
+
+    ir_tracers_are_on = 1;
+}
+
+
 void* check_if_suddent_pedestrian(){
+
     Mat checkFrame_hsv;
     cv::cvtColor(src, checkFrame_hsv, cv::COLOR_BGR2HSV);
     Mat redLowerMask, redHigherMask;
@@ -232,9 +283,9 @@ void* check_if_suddent_pedestrian(){
     GaussianBlur(red_hue_image, red_hue_image, cv::Size(9, 9), 2, 2);
     int reds = countNonZero(red_hue_image);
     cout << reds << "number of red pixels on the frame" << endl;
-    if(reds > 2000)
+    if(reds < 2000)
     {
-
+        obstacle_avoidance();
     }
 
 }
