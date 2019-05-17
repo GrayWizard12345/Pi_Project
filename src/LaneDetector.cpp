@@ -72,7 +72,7 @@ cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
     {
         cv::cvtColor(img_noise, output, cv::COLOR_BGR2GRAY);
         cv::dilate(output, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9)));
-        imshow("deliate", output);
+//        imshow("deliate", output);
     }
     cv::GaussianBlur(output, output, cv::Size(9, 9), 2, 2);
 
@@ -360,7 +360,7 @@ void* look_for_cross_walk(void* mat) {
         cv::Canny(crosswalk_grayscale, crosswalk_grayscale, lowThreshold, lowThreshold * ratio, kernel_size);
         dilate(crosswalk_grayscale, crosswalk_grayscale, getStructuringElement(MORPH_ELLIPSE, Size(2, 2)));
 
-//    imshow("Processed", crosswalk_grayscale);
+    imshow("Processed", crosswalk_grayscale);
 
         vector<Vec4i> lines;
         int counter = 0;
@@ -397,7 +397,7 @@ void* look_for_cross_walk(void* mat) {
             if (crosswalk_detected) {
                 int temp = speed;
                 ir_tracers_are_on = false;
-                speed = speed / 2;
+                speed = speed - 30;
                 delay(3000);
                 speed = temp;
                 ir_tracers_are_on = true;

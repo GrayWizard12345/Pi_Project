@@ -1,5 +1,5 @@
 #Movement configurations
-SPEED = 45
+SPEED = 80
 RATIO = 5
 BEFORE_TURN_DELAY = 0
 

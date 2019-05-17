@@ -120,13 +120,13 @@ int main(int argc, char **argv) {
             speedLeft = speed;
         }
         
-        if (trafficLightStatus != RED_LIGHT) {
+        if (trafficLightStatus == GREEN_LIGHT) {
             pwm_go_smooth(speedLeft, speedRight);
         }
         //pthread_mutex_unlock(&frame_mutex);
         pthread_mutex_unlock(&motor_mutex);
 
-        printf("\nspeed L: %d, speed R: %d, turn: %d , slope: %fl\n", speedLeft, speedRight, turn ,slope);
+        printf("\nspeed L: %d, speed R: %d, turn: %d , slope: %lf, traffic_light_status:%d\n", speedLeft, speedRight, turn ,slope, trafficLightStatus);
 
         delay(100);
 
@@ -190,7 +190,8 @@ void *video_loop(void *) {
 
     capture.grab(); //grab the scene using raspicam
     capture.retrieve(src); // retrieve the captured scene as an image and store it in matrix container
-    //img_edges = laneDetector.edgeDetector(src);
+
+//    resize(src, src, Size(640, 480));
     int width = src.size().width;
     int height = src.size().height;
     cout << "Width:" << width << endl;
@@ -226,7 +227,7 @@ void *video_loop(void *) {
             double vanish_x = laneDetector.predictTurn(turn);
 
             double full = img_mask.cols;
-            slope = vanish_x * 100 / full;
+            slope = vanish_x * 300 / full;
 
             laneDetector.plotLane(src, lane, turnAsString[turn] + " " + to_string(slope), "Lane Detection");
 

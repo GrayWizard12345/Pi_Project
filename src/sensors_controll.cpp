@@ -4,9 +4,12 @@
 #include<stdlib.h>
 #include <csignal>
 #include <pthread.h>
+#include "opencv2/opencv.hpp"
+#include "opencv2/opencv.hpp"
+
 
 using namespace std;
-
+using namespace cv;
 #define get_left_lane digitalRead(LEFT_TRACER_PIN)
 #define get_right_lane digitalRead(RIGHT_TRACER_PIN)
 
@@ -34,6 +37,8 @@ void *ultrasonic_loop(void *);
 extern int speed;
 extern int ultrasonic_is_on;
 extern int ir_tracers_are_on;
+extern Mat src;
+
 int left_ir_val;
 int right_ir_val;
 int distance = 0;
@@ -42,6 +47,8 @@ pthread_mutex_t motor_mutex;
 extern pthread_t tracer_thread;
 extern pthread_t ultrasonic_thread;
 
+
+void* check_if_suddent_pedestrian();
 void sensor_setup() {
     // IR sensor pins
     pinMode(LEFT_TRACER_PIN, INPUT);
@@ -207,6 +214,27 @@ int sensor_thread_setup() {
     if (pthread_create(&ultrasonic_thread, nullptr, ultrasonic_loop, nullptr)) {
         printf("Failed to create a thread!");
         exit(-1);
+    }
+
+}
+
+void* check_if_suddent_pedestrian(){
+    Mat checkFrame_hsv;
+    cv::cvtColor(src, checkFrame_hsv, cv::COLOR_BGR2HSV);
+    Mat redLowerMask, redHigherMask;
+    inRange(checkFrame_hsv, Scalar(0, 120, 70), Scalar(10, 255, 255), redLowerMask);
+    inRange(checkFrame_hsv, Scalar(170, 120, 70), Scalar(180, 255, 255), redHigherMask);
+    Mat red_hue_image;
+    //use hue values from the both ranges (masks)
+    addWeighted(redLowerMask, 1.0, redHigherMask, 1.0, 0.0, red_hue_image);
+    erode(red_hue_image, red_hue_image, getStructuringElement(MORPH_ELLIPSE, Size( 9, 9)));
+    dilate(red_hue_image, red_hue_image, getStructuringElement(MORPH_ELLIPSE, Size( 3, 3)));
+    GaussianBlur(red_hue_image, red_hue_image, cv::Size(9, 9), 2, 2);
+    int reds = countNonZero(red_hue_image);
+    cout << reds << "number of red pixels on the frame" << endl;
+    if(reds > 2000)
+    {
+
     }
 
 }

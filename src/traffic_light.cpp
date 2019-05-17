@@ -16,10 +16,10 @@ void *trafficLightLoop(void*) {
     while (1) {
 
         Mat rightTopBgr = frame(rec);
-        Mat leftTopBgr = frame(rec);
+        Mat leftTopBgr = frame(rect2);
         int rows = rightTopBgr.rows;
-        int cols = rightTopBgr.cols * 2;
-        Mat3b roi(rows, cols, Vec3b(0,0,0));
+        int cols = rightTopBgr.cols;
+        Mat3b roi(rows, cols * 2, Vec3b(0,0,0));
 
         leftTopBgr.copyTo(roi(Rect(0,0, rows, cols)));
         rightTopBgr.copyTo(roi(Rect((1280 * 3) / 4, 0, rows, cols)));
@@ -53,6 +53,10 @@ void *trafficLightLoop(void*) {
             }
             printf("\nRed light detected - circles: %d \n", circleCount);
             trafficLightStatus = RED_LIGHT;
+            pthread_mutex_lock(&motor_mutex);
+            pwmStop();
+            delay(10);
+            pthread_mutex_unlock(&motor_mutex);
         }else {
             trafficLightStatus = GREEN_LIGHT;
             printf("\nNo Red light detected => Green Light is ON");
