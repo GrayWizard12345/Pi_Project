@@ -38,7 +38,7 @@ public:
      * @brief set the area for further detection, until the area is changed, all detections are made on it
      * @param bgr
      */
-    void setDetectionArea(cv::Mat bgr);
+    void setDetectionArea(cv::Mat bgr, bool isProcessingNeeded = true);
 
     void loadPedestrian();
 

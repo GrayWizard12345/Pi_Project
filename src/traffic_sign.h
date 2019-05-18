@@ -14,16 +14,29 @@
 #include <math.h>
 
 using cv::Mat;
+using cv::Scalar;
 
-enum ArrowDirection{
-    NO_ARROW = -1, UP_ARROW, DOWN_ARROW, RIGHT_ARROW, LEFT_ARROW
+enum Sign {
+    NO_SIGN, LEFT_TURN, RIGHT_TURN, STOP, PEDESTRIAN, CIRCULAR_MOTION
 };
+
+extern Sign signDetected;
+
+extern Scalar blue;
+extern Scalar yellow;
+extern Scalar green;
+extern Scalar orange;
+extern Scalar violet;
+extern Scalar purple;
+extern Scalar pink;
 
 cv::Mat getTrafficSignROI(cv::Mat bgr);
 
-cv::Rect MatchingMethod(cv::Mat img, cv::Mat templ, int match_method =  cv::TM_CCORR_NORMED);
+cv::Rect MatchingMethod(cv::Mat img, cv::Mat templ, int match_method = cv::TM_CCORR_NORMED);
 
-std::vector<cv::Vec3f> getBlueCircles(cv::Mat bgr, int high = 100, int low = 15, int minRadius = 60, int maxRadius = 100);
+Mat
+getEdges(cv::Mat bgr);
+
 
 /**
  * @brief checks whether the rectangle is within Mat
@@ -33,10 +46,19 @@ std::vector<cv::Vec3f> getBlueCircles(cv::Mat bgr, int high = 100, int low = 15,
  */
 bool isWithMat(cv::Rect circleBox, cv::Mat bgr);
 
+
 cv::Mat getRedMask(cv::Mat roi);
 
-ArrowDirection isArrowDetected(cv::Mat bgr);
+cv::Mat convertToYCrCb(cv::Mat input);
 
-cv::Mat convertToYCrCb(cv::Mat src);
+Mat gammaCorrection(const Mat &img, const double gamma_);
+
+void initSignDetection();
+
+void detectSign(Mat bgr);
+
+std::vector<cv::Vec3f> getCircles(Mat edges, int high = 100, int low = 15, int minRadius = 60, int maxRadius = 100);
+
+void getRectangles(Mat edges, Mat src);
 
 #endif //PI_PROJECT_TRAFFIC_SIGN_H

@@ -3,13 +3,73 @@
 //
 
 #include "traffic_sign.h"
+#include "CascadeUtil.h"
 
 using namespace cv;
+
+static CascadeUtil cascadeUtil;
+
+Sign signDetected = NO_SIGN;
+
+Scalar blue = Scalar(255, 178, 102);
+Scalar yellow = Scalar(255, 255, 51);
+Scalar green = Scalar(153, 255, 51);
+Scalar orange = Scalar(51, 255, 255);
+Scalar violet = Scalar(127, 0, 255);
+Scalar purple = Scalar(255, 51, 255);
+Scalar pink = Scalar(255, 51, 153);
+
+void initSignDetection() {
+    cascadeUtil.loadAll();
+}
+
+void detectSign(Mat bgr) {
+    bgr = getTrafficSignROI(bgr);
+
+    std::vector<cv::Vec3f> circles = getEdges(bgr);
+
+    printf("detected circles size %d\n", circles.size());
+
+    for (size_t i = 0; i < circles.size(); i++) {
+        Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+        int radius = cvRound(circles[i][2]);
+
+        printf("x: %d y: %d radius: %d\n", center.x, center.y, radius);
+        circle(bgr, center, radius, yellow, 2, 8, 0);
+
+        Rect circleBox(center.x - radius, center.y - radius, radius * 2, radius * 2);
+
+        if (isWithMat(circleBox, bgr)) {
+
+            Mat circleROI(bgr, circleBox);
+
+            //region Cascade
+            cascadeUtil.setDetectionArea(circleROI);
+            cascadeUtil.detectAllCircleBlueSigns();
+
+            for (unsigned k = 0; k < cascadeUtil.left_.size(); k++) {
+                rectangle(bgr, cascadeUtil.left_[k], green, 2, 1);
+                putText(bgr, "left", Point(50, 110), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+            }
+
+
+            for (unsigned n = 0; n < cascadeUtil.right_.size(); n++) {
+                rectangle(bgr, cascadeUtil.right_[n], purple, 2, 1);
+                putText(bgr, "right", Point(50, 150), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+            }
+            //endregion
+
+        } else {
+            printf("outside\n");
+        }
+    }
+
+}
 
 //TODO change the points of ROI
 cv::Mat getTrafficSignROI(cv::Mat bgr) {
 
-    cv::Rect roiBox(0, bgr.rows / 7, bgr.cols, bgr.rows / 4);
+    cv::Rect roiBox(0, bgr.rows / 12, bgr.cols, bgr.rows / 4);
 
     cv::Mat roi(bgr, roiBox);
 
@@ -17,22 +77,87 @@ cv::Mat getTrafficSignROI(cv::Mat bgr) {
     return roi;
 }
 
-std::vector<cv::Vec3f> getBlueCircles(cv::Mat bgr, int high, int low, int minRadius, int maxRadius) {
-    cv::Mat hsv_image;
-    cvtColor(bgr, hsv_image, cv::COLOR_BGR2HSV);
+Mat getEdges(cv::Mat bgr) {
+    Mat output;
+    bgr.copyTo(output);
 
-    cv::Mat blue_hue_range;
-    //85 60 60
-    inRange(hsv_image, cv::Scalar(50, 0, 0), cv::Scalar(140, 255, 255), blue_hue_range);
-    //dilate(blue_hue_range, blue_hue_range, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(9, 9)));
+    int lowThreshold = 35;
+    int ratio = 3;
+    int kernel_size = 3;
 
-    imshow("Blue", blue_hue_range);
 
+    Mat edges;
+    cv::Canny(output, edges, lowThreshold, lowThreshold * ratio, kernel_size);
+
+//    Mat blurred;
+//    cv::blur(edges, blurred, cv::Size(9, 9));
+
+
+    return edges;
+}
+
+std::vector<Vec3f> getCircles(Mat edges, int high, int low, int minRadius, int maxRadius) {
     std::vector<cv::Vec3f> circles;
-    HoughCircles(blue_hue_range, circles, cv::HOUGH_GRADIENT, 1, blue_hue_range.rows / 8, high, low, minRadius,
+    HoughCircles(edges, circles, cv::HOUGH_GRADIENT, 1, edges.rows / 8, high, low, minRadius,
                  maxRadius);
 
     return circles;
+}
+
+// helper function:
+// finds a cosine of angle between vectors
+// from pt0->pt1 and from pt0->pt2
+double angle(Point pt1, Point pt2, Point pt0) {
+    double dx1 = pt1.x - pt0.x;
+    double dy1 = pt1.y - pt0.y;
+    double dx2 = pt2.x - pt0.x;
+    double dy2 = pt2.y - pt0.y;
+    return (dx1 * dx2 + dy1 * dy2) / sqrt((dx1 * dx1 + dy1 * dy1) * (dx2 * dx2 + dy2 * dy2) + 1e-10);
+}
+
+void getRectangles(Mat edges, Mat src) {
+    std::vector<std::vector<Point>> contours;
+    std::vector<Vec4i> hierarchy;
+
+    // find contours and store them all as a list
+    findContours(edges, contours, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+
+    std::vector<Point> approx;
+    std::vector<std::vector<Point>> rectangles;
+
+    // test each contour
+    for (size_t i = 0; i < contours.size(); i++) {
+        // approximate contour with accuracy proportional
+        // to the contour perimeter
+        approxPolyDP(Mat(contours[i]), approx, arcLength(Mat(contours[i]), true) * 0.02, true);
+
+        // square contours should have 4 vertices after approximation
+        // relatively large area (to filter out noisy contours)
+        // and be convex.
+        // Note: absolute value of an area is used because
+        // area may be positive or negative - in accordance with the
+        // contour orientation
+        if (approx.size() == 4)
+//            isContourConvex(Mat(approx))) {
+//            double maxCosine = 0;
+
+//            for (int j = 2; j < 5; j++) {
+//                // find the maximum cosine of the angle between joint edges
+//                double cosine = fabs(angle(approx[j % 4], approx[j - 2], approx[j - 1]));
+//                maxCosine = MAX(maxCosine, cosine);
+//            }
+
+            // if cosines of all angles are small
+            // (all angles are ~90 degree) then write quandrange
+            // vertices to resultant sequence
+//            if (maxCosine < 0.3) {
+            cv::line(src, approx[0], approx[1], cv::Scalar(0, 255, 0));
+        cv::line(src, approx[1], approx[2], cv::Scalar(0, 255, 0));
+        cv::line(src, approx[2], approx[3], cv::Scalar(0, 255, 0));
+        cv::line(src, approx[3], approx[0], cv::Scalar(0, 255, 0));
+//            }
+//        }
+    }
 }
 
 Mat getRedMask(Mat roi) {
@@ -61,6 +186,23 @@ bool isWithMat(cv::Rect circleBox, cv::Mat bgr) {
            && 0 <= circleBox.height
            && circleBox.y + circleBox.height <= bgr.rows;
 }
+
+Mat gammaCorrection(const Mat &img, const double gamma_) {
+    CV_Assert(gamma_ >= 0);
+
+    //! [changing-contrast-brightness-gamma-correction]
+
+    Mat lookUpTable(1, 256, CV_8U);
+    uchar *p = lookUpTable.ptr();
+    for (int i = 0; i < 256; ++i)
+        p[i] = saturate_cast<uchar>(pow(i / 255.0, gamma_) * 255.0);
+
+    Mat res = img.clone();
+    LUT(img, lookUpTable, res);
+
+    return res;
+}
+
 
 float round(float num, int decimalPlaces) {
     return roundf(num * pow(10, decimalPlaces)) / pow(10, decimalPlaces);
@@ -97,4 +239,34 @@ Rect MatchingMethod(cv::Mat img, cv::Mat templ, int match_method) {
     Rect rect(matchLoc, Point(matchLoc.x + templ.cols, matchLoc.y + templ.rows));
 
     return rect;
+}
+
+cv::Mat convertToYCrCb(cv::Mat input) {
+    //sample input and output
+    float data[3][1] = {98, 76, 88};
+    Mat output(input.rows, input.cols, CV_32FC3);
+
+    //iterate over all pixels
+    for (int i = 0; i < input.rows; i++) {
+        for (int j = 0; j < input.cols; j++) {
+            //get bgr pixel
+            Vec3f bgrPixel = input.at<Vec3f>(i, j);
+
+            float B = bgrPixel[0];
+            float G = bgrPixel[1];
+            float R = bgrPixel[2];
+
+            //actual conversion from BGR to YCrCb
+            float delta = 0.5f;
+            float Y = 0.299f * R + 0.587f * G + 0.114f * B;
+            float Cb = (B - Y) * 0.564f + delta;
+            float Cr = (R - Y) * 0.713f + delta;
+
+            //store into result image
+            Vec3f yCrCbPixel(Y, Cr, Cb);
+            output.at<Vec3f>(i, j) = yCrCbPixel;
+        }
+    }
+
+    return output;
 }

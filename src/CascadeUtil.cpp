@@ -12,29 +12,38 @@ using namespace cv;
 void CascadeUtil::loadLeftTurn() {
     if (!cascade_left.load("/home/madina/cascades/cascade_left.xml"))
         printf("left - not successfully loaded\n");
+    else
+        printf("left - success\n");
 }
 
 
 void CascadeUtil::loadRightTurn() {
     if (!cascade_right.load("/home/madina/cascades/cascade_right.xml"))
         printf("right - not successfully loaded\n");
+    else
+        printf("right - success\n");
 }
 
 void CascadeUtil::loadParking() {
     if (!cascade_parking.load("/media/madina/Files/Projects/opencv/Pi_Project/src/cascades/cascade_parking.xml"))
         printf("parking - not successfully loaded\n");
+    else
+        printf("parking - success\n");
 }
 
 void CascadeUtil::loadPedestrian() {
     if (!cascade_pedestrian.load("/media/madina/Files/Projects/opencv/Pi_Project/src/cascades/cascade_pedestrian.xml"))
         printf("pedestrian - not successfully loaded\n");
+    else
+        printf("pedestrian - success\n");
 }
 
 void CascadeUtil::loadStop() {
     if (!cascade_stop.load("/media/madina/Files/Projects/opencv/Pi_Project/src/cascades/cascade_stop.xml"))
         printf("stop - not successfully loaded\n");
+    else
+        printf("stop - success\n");
 }
-
 
 void CascadeUtil::loadAll() {
     loadLeftTurn();
@@ -44,24 +53,28 @@ void CascadeUtil::loadAll() {
     loadStop();
 }
 
-CascadeUtil::CascadeUtil() {
-}
+CascadeUtil::CascadeUtil() {}
 
-void CascadeUtil::setDetectionArea(cv::Mat bgr) {
+void CascadeUtil::setDetectionArea(cv::Mat bgr, bool isProcessingNeeded) {
     cv::Mat gray;
-    cv::cvtColor(bgr, gray, CV_BGR2GRAY);
-    equalizeHist(gray, gray);
-    gray.copyTo(detectionArea);
+    if (isProcessingNeeded) {
+        cv::cvtColor(bgr, gray, CV_BGR2GRAY);
+        equalizeHist(gray, gray);
+        gray.copyTo(detectionArea);
+    } else {
+        bgr.copyTo(detectionArea);
+    }
 }
 
 std::vector<cv::Rect> CascadeUtil::detectPedestrian(int width, int height) {
-    cascade_pedestrian.detectMultiScale(detectionArea, pedestrian, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(width, height));
+    cascade_pedestrian.detectMultiScale(detectionArea, pedestrian, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE,
+                                        cv::Size(width, height));
     isPedestrianDetected = pedestrian.empty();
     return pedestrian;
 }
 
 std::vector<cv::Rect> CascadeUtil::detectStop(int width, int height) {
-    cascade_stop.detectMultiScale(detectionArea, stop, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(width, height));
+    cascade_stop.detectMultiScale(detectionArea, stop, 1.1, 3, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(width, height));
     isStopDetected = pedestrian.empty();
     return stop;
 }
