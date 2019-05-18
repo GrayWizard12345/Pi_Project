@@ -56,13 +56,17 @@ int del;
 
 bool crosswalk_detected = true;
 
-int obstacle_avoidance_turn_delay;
+int obstacle_avoidance_left_turn_delay;
 
 int obstacle_avoidance_go_dalay;
 
 int width;
 
 int height;
+
+cv::Mat red_hue_image;
+
+int obstacle_avoidance_right_turn_delay;
 
 void init_vars();
 
@@ -108,12 +112,16 @@ int main(int argc, char **argv) {
     turn = STRAIGHT;
     delay(3000);
     int speedLeft = speed, speedRight = speed;
+    double max_turning = speed / ratio_;
+    double speed_per_turn = (speed - max_turning) / (50 - 100);
     while (true) {
 
         pthread_mutex_lock(&motor_mutex);
 
-        int turn_speed = speed / ratio_;
+        auto turn_speed = static_cast<int>(speed + (slope - 50) * speed_per_turn);
 
+        if (turn_speed > speed)
+            turn_speed = speed;
 
         if (turn == Turn::STRAIGHT) {
             speedLeft = speed;
@@ -248,6 +256,7 @@ void *video_loop(void *) {
             imshow("edges", img_edges);
 //            imshow("mask", img_mask);
         }
+        imshow("TRAFFIC_LIGHT", red_hue_image);
         cvWaitKey(1);
 //        pthread_mutex_unlock(&frame_mutex);
     }
@@ -262,7 +271,8 @@ void init_vars()
     ultrasonic_is_on = stoi(vars["ULTRASONIC_ON"]);
     ir_tracers_are_on = stoi(vars["IR_TRACERS_ON"]);
     del = stoi(vars["BEFORE_TURN_DELAY"]);
-    obstacle_avoidance_turn_delay = stoi(vars["OBSTACLE_AVOIDANCE_TURN_DELAY"]);
+    obstacle_avoidance_left_turn_delay = stoi(vars["OBSTACLE_AVOIDANCE_LEFT_TURN_DELAY"]);
+    obstacle_avoidance_right_turn_delay = stoi(vars["OBSTACLE_AVOIDANCE_RIGHT_TURN_DELAY"]);
     obstacle_avoidance_go_dalay = stoi(vars["OBSTACLE_AVOIDANCE_GO_DELAY"]);
     width = stoi(vars["WIDTH"]);
     height = stoi(vars["HEIGHT"]);

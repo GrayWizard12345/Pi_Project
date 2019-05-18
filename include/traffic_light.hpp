@@ -12,6 +12,7 @@
 #define RED_TRAFFIC_LIGHT_SIGNAL SIGRTMIN + 7
 #define GREEN_TRAFFIC_LIGHT_SIGNAL SIGRTMIN + 8
 
+
 /**
  * @brief for indicating the status of traffic light
  */
@@ -28,14 +29,14 @@ extern pthread_t trafficLightThread;
 extern pthread_mutex_t motor_mutex;
 extern int width;
 extern int height;
+extern cv::Mat red_hue_image;
 /**
  *  @brief the thread function for red and green light detection
  */
-void *trafficLightLoop(void *);
+    void *trafficLightLoop(void*);
 
 /**
  * @brief initializing traffic light thread
  * @param src is used to get a ROI from captured frame
  */
-int initTrafficLightThread();
-
+    int initTrafficLightThread();

@@ -74,7 +74,8 @@ cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
 //        cv::dilate(output, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
 //        imshow("deliate", output);
     }
-    cv::GaussianBlur(output, output, cv::Size(9, 9), 2, 2);
+//    cv::GaussianBlur(output, output, cv::Size(9, 9), 2, 2);
+    blur(output, output, cv::Size(3, 3));
     int lowThreshold = 35;
     int ratio = 3;
     int kernel_size = 3;
@@ -128,7 +129,7 @@ std::vector<std::vector<cv::Vec4i> > LaneDetector::lineSeparation(std::vector<cv
     size_t j = 0;
     cv::Point ini;
     cv::Point fini;
-    double slope_thresh = 0.3;     //TODO changed from 0.3
+    double slope_thresh = 0.17;     //TODO changed from 0.3
     std::vector<double> slopes;
     std::vector<cv::Vec4i> selected_lines;
     std::vector<cv::Vec4i> right_lines, left_lines;
@@ -296,35 +297,36 @@ double LaneDetector::predictTurn(int &output) {
  *@param turn is the output string containing the turn information
  *@return The function returns a 0
  */
-int LaneDetector::plotLane(cv::Mat inputImage, std::vector<cv::Point> lane, std::string turn, std::string frameName) {
+Mat LaneDetector::plotLane(cv::Mat inputImage, std::vector<cv::Point> lane, std::string turn, std::string frameName) {
     std::vector<cv::Point> poly_points;
     cv::Mat output;
-
+    cv::Mat drawing;
     // Create the transparent polygon for a better visualization of the lane
     inputImage.copyTo(output);
+    inputImage.copyTo(drawing);
     poly_points.push_back(lane[2]);
     poly_points.push_back(lane[0]);
     poly_points.push_back(lane[1]);
     poly_points.push_back(lane[3]);
     cv::fillConvexPoly(output, poly_points, cv::Scalar(0, 0, 255), CV_AA, 0);
-    cv::addWeighted(output, 0.3, inputImage, 1.0 - 0.3, 0, inputImage);
+    cv::addWeighted(output, 0.3, drawing, 1.0 - 0.3, 0, drawing);
 
     // Plot both lines of the lane boundary
-    cv::line(inputImage, lane[0], lane[1], cv::Scalar(0, 255, 255), 5, CV_AA);
-    cv::line(inputImage, lane[2], lane[3], cv::Scalar(0, 255, 255), 5, CV_AA);
+    cv::line(drawing, lane[0], lane[1], cv::Scalar(0, 255, 255), 5, CV_AA);
+    cv::line(drawing, lane[2], lane[3], cv::Scalar(0, 255, 255), 5, CV_AA);
 
     auto vanish_x = static_cast<double>(((right_m*right_b.x) - (left_m*left_b.x) - right_b.y + left_b.y) / (right_m - left_m));
-    line(inputImage, Point(vanish_x, inputImage.rows / 2 - 10), Point(vanish_x, inputImage.rows / 2 + 10), Scalar(250, 255, 255), 25, CV_AA);
+    line(drawing, Point(vanish_x, inputImage.rows / 2 - 10), Point(vanish_x, drawing.rows / 2 + 10), Scalar(250, 255, 255), 25, CV_AA);
 
     // Plot the turn message
 //    resize(inputImage, inputImage, Size(), 0.6, 0.6);
-    cv::putText(inputImage, turn, cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+    cv::putText(drawing, turn, cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
 
     // Show the final output image
     cv::namedWindow(frameName, CV_WINDOW_AUTOSIZE);
 
-    cv::imshow(frameName, inputImage);
-    return 0;
+    cv::imshow(frameName, drawing);
+    return drawing;
 }
 
 void* look_for_cross_walk(void* mat) {
@@ -358,7 +360,7 @@ void* look_for_cross_walk(void* mat) {
         cv::Canny(crosswalk_grayscale, crosswalk_grayscale, lowThreshold, lowThreshold * ratio, kernel_size);
         dilate(crosswalk_grayscale, crosswalk_grayscale, getStructuringElement(MORPH_ELLIPSE, Size(2, 2)));
 
-        imshow("Processed", crosswalk_grayscale);
+//        imshow("Processed", crosswalk_grayscale);
 
         vector<Vec4i> lines;
         int counter = 0;

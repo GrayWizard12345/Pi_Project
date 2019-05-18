@@ -74,8 +74,8 @@ public:
     std::vector<cv::Point> regression(std::vector<std::vector<cv::Vec4i> > left_right_lines,
                                       cv::Mat inputImage);  // Get only one line for each side of the lane
 
-    int plotLane(cv::Mat inputImage, std::vector<cv::Point> lane,
-                               std::string turn, std::string frameName);  // Plot the resultant lane and turn prediction in the frame.
+    cv::Mat plotLane(cv::Mat inputImage, std::vector<cv::Point> lane,
+                     std::string turn, std::string frameName);  // Plot the resultant lane and turn prediction in the frame.
 
 
     double predictTurn(int &output);

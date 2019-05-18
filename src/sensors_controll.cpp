@@ -39,14 +39,15 @@ extern int speed;
 extern int ultrasonic_is_on;
 extern int ir_tracers_are_on;
 extern Mat src;
-extern int obstacle_avoidance_turn_delay;
+extern int obstacle_avoidance_left_turn_delay;
+extern int obstacle_avoidance_right_turn_delay;
 extern int obstacle_avoidance_go_dalay;
 
 int left_ir_val;
 int right_ir_val;
 int dist = 0;
-int last_turn = 0;
-
+int last_turn = STRAIGHT;
+int obstacle_counter = 0;
 pthread_mutex_t motor_mutex;
 extern pthread_t tracer_thread;
 extern pthread_t ultrasonic_thread;
@@ -153,6 +154,7 @@ void *IR_tracer_loop(void *) {
 
 void obstacle_signal_handler(int signum) {
     pthread_mutex_lock(&motor_mutex);
+    obstacle_counter++;
     do {
         auto temp = static_cast<int>(measure_distance(30000));
         if (temp != 0)
@@ -232,31 +234,41 @@ void obstacle_avoidance()
     switch (last_turn){
         case STRAIGHT:
 
-            pwm_right_point_turn(speed);
-            delay(obstacle_avoidance_turn_delay);
+            pwm_left_point_turn(speed);
+            delay(obstacle_avoidance_left_turn_delay);
 
             pwm_go_smooth(speed, speed);
             delay(obstacle_avoidance_go_dalay);
 
-            pwm_left_point_turn(obstacle_avoidance_turn_delay);
-            delay(obstacle_avoidance_turn_delay);
+            pwm_right_point_turn(obstacle_avoidance_left_turn_delay);
+            delay(obstacle_avoidance_right_turn_delay);
 
             pwm_go_smooth(speed, speed);
             delay(obstacle_avoidance_go_dalay);
 
-            pwm_left_point_turn(obstacle_avoidance_turn_delay);
-            delay(obstacle_avoidance_turn_delay);
+            pwm_right_point_turn(obstacle_avoidance_left_turn_delay);
+            delay(obstacle_avoidance_right_turn_delay);
 
             pwm_go_smooth(speed, speed);
             delay(obstacle_avoidance_go_dalay);
 
-            pwm_right_point_turn(speed);
-            delay(obstacle_avoidance_turn_delay);
+            pwm_left_point_turn(speed);
+            delay(obstacle_avoidance_left_turn_delay);
 
-            last_turn = RIGHT;
+            last_turn = LEFT;
             break;
+
         case LEFT:
 
+            pwm_right_point_turn(obstacle_avoidance_left_turn_delay);
+            delay(obstacle_avoidance_right_turn_delay);
+
+            pwm_go_smooth(speed, speed);
+            delay(obstacle_avoidance_go_dalay);
+
+            pwm_left_point_turn(speed);
+            delay(obstacle_avoidance_left_turn_delay);
+            last_turn = RIGHT;
             break;
 
         case RIGHT:
@@ -283,9 +295,10 @@ void* check_if_suddent_pedestrian(){
     GaussianBlur(red_hue_image, red_hue_image, cv::Size(9, 9), 2, 2);
     int reds = countNonZero(red_hue_image);
     cout << reds << "number of red pixels on the frame" << endl;
-    if(reds < 2000)
-    {
-        obstacle_avoidance();
-    }
+    if(obstacle_counter > 1)
+        if(reds < 2000)
+        {
+            obstacle_avoidance();
+        }
 
 }
