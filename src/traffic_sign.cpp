@@ -359,6 +359,29 @@ void *sign_detection(void *) {
         else
             signDetected = NO_SIGN;
 
+        for (auto r: cascadeUtil.stop) {
+            rectangle(bgr, r, yellow);
+        }
+
+        for (auto r : cascadeUtil.left_) {
+            rectangle(bgr, r, green);
+        }
+
+        for (auto r : cascadeUtil.right_) {
+            rectangle(bgr, r, purple);
+        }
+
+        for (auto r : cascadeUtil.pedestrian) {
+            rectangle(bgr, r, orange);
+        }
+
+        for (auto r : cascadeUtil.parking) {
+            rectangle(bgr, r, blue);
+        }
+
+        imshow("Traffic Sign", bgr);
+        waitKey(0);
+
 
         lastDetectedSign = signDetected;
     }
