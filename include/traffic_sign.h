@@ -17,7 +17,7 @@ using cv::Mat;
 using cv::Scalar;
 
 enum Sign {
-    NO_SIGN, LEFT_TURN, RIGHT_TURN, STOP, PEDESTRIAN, PARKING
+    NO_SIGN, LEFT_TURN_SIGN, RIGHT_TURN_SIGN, STOP_SIGN, PEDESTRIAN_SIGN, PARKING_SIGN
 };
 
 extern Sign signDetected;

@@ -10,6 +10,7 @@
 #include "../include/LaneDetector.hpp"
 #include "../include/traffic_light.hpp"
 #include "../include/config_reader.h"
+#include "../include/traffic_sign.h"
 #include <cmath>
 
 using namespace std;
@@ -38,6 +39,7 @@ string turnAsString[] = {"L", "S", "R"};
 
 int speed;
 int ratio_;
+int slowSpeed;
 
 LaneDetector laneDetector;
 pthread_mutex_t frame_mutex;
@@ -76,8 +78,7 @@ void crosswalk_handler(int sigNum);
 
 void *motor_loop(void *);
 
-
-void* motor_loop(void*) {
+void *motor_loop(void *) {
 
     if (wiringPiSetup() == -1)
         exit(-1);
@@ -91,19 +92,41 @@ void* motor_loop(void*) {
         exit(-1);
     }
 
-
-
     turn = STRAIGHT;
     delay(3000);
     int speedLeft = speed, speedRight = speed;
     double max_turning = speed / ratio_;
     double speed_per_turn = (speed - max_turning) / (50 - 100);
+
+    int regularSpeed = speed;
     while (true) {
 
         pthread_mutex_lock(&motor_mutex);
 
 //        auto turn_speed = static_cast<int>(speed + (slope - 50) * speed_per_turn);
+
+        //region Pedestrian sign handling
+        if (signDetected == PEDESTRIAN_SIGN)
+            speed = slowSpeed;
+        else
+            speed = regularSpeed;
+        //endregion
+
+        //region Left/Right turn sign handling
+        if (signDetected == LEFT_TURN_SIGN)
+            turn = LEFT;
+        else if (signDetected == RIGHT_TURN_SIGN)
+            turn = RIGHT;
+        //endregion
+
+        //region Stop sign handling
+        if (signDetected == STOP_SIGN) {
+            delay(5000);
+        }
+        //endregion
+
         int turn_speed = speed / ratio_;
+
         if (turn_speed > speed)
             turn_speed = speed;
 
@@ -170,7 +193,7 @@ void crosswalk_handler(int sigNum) {
     pthread_mutex_unlock(&motor_mutex);
 }
 
-int main () {
+int main() {
 
     signal(SIGINT, signalHandler);
     signal(SIGUSR1, left_interupt);
@@ -219,7 +242,6 @@ int main () {
     //Traffic light thread initializations
     initTrafficLightThread();
 
-
     //Crosswalk detection thread
     if (pthread_create(&crosswalk_thread, nullptr, look_for_cross_walk, (void *) &img_mask)) {
         printf("\nError wile creating crosswalk thread!\n");
@@ -234,8 +256,6 @@ int main () {
         resize(src, src, Size(width, height));
 
         src.copyTo(frame);
-
-
 
         img_mask = laneDetector.mask(src);
         img_edges = laneDetector.edgeDetector(img_mask);
@@ -282,4 +302,5 @@ void init_vars() {
     obstacle_avoidance_go_dalay = stoi(vars["OBSTACLE_AVOIDANCE_GO_DELAY"]);
     width = stoi(vars["WIDTH"]);
     height = stoi(vars["HEIGHT"]);
+    slowSpeed = stoi(vars["SLOW_SPEED"]);
 }

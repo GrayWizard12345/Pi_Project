@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <csignal>
 #include "motion.hpp"
+#include "traffic_sign.h"
 
 #define RED_TRAFFIC_LIGHT_SIGNAL SIGRTMIN + 7
 #define GREEN_TRAFFIC_LIGHT_SIGNAL SIGRTMIN + 8

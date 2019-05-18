@@ -3,7 +3,7 @@
 using namespace cv;
 using namespace std;
 
-void* trafficLightLoop(void*) {
+void *trafficLightLoop(void *) {
     //delay(1000);
     trafficLightStatus = Status::RED_LIGHT;
     printf("\nTraffic light thread\n");
@@ -11,6 +11,8 @@ void* trafficLightLoop(void*) {
     Rect rec(0, 0, width, height / 2);
     int circleCount = 0;
     while (1) {
+
+        while (signDetected == STOP_SIGN);
 
         Mat roi = frame(rec);
         Mat hsv;
@@ -23,8 +25,8 @@ void* trafficLightLoop(void*) {
 
         //use hue values from the both ranges (masks)
         addWeighted(redLowerMask, 1.0, redHigherMask, 1.0, 0.0, red_hue_image);
-        erode(red_hue_image, red_hue_image, getStructuringElement(MORPH_ELLIPSE, Size( 9, 9)));
-        dilate(red_hue_image, red_hue_image, getStructuringElement(MORPH_ELLIPSE, Size( 3, 3)));
+        erode(red_hue_image, red_hue_image, getStructuringElement(MORPH_ELLIPSE, Size(9, 9)));
+        dilate(red_hue_image, red_hue_image, getStructuringElement(MORPH_ELLIPSE, Size(3, 3)));
         GaussianBlur(red_hue_image, red_hue_image, cv::Size(9, 9), 2, 2);
 
         vector<Vec3f> circles;
@@ -45,7 +47,7 @@ void* trafficLightLoop(void*) {
             pwmStop();
             delay(20);
             pthread_mutex_unlock(&motor_mutex);
-        }else {
+        } else {
             trafficLightStatus = GREEN_LIGHT;
             printf("\nNo Red light detected => Green Light is ON");
         }
