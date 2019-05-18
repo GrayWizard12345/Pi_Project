@@ -2,8 +2,8 @@
 // Created by madina on 05/05/19.
 //
 
-#include "traffic_sign.h"
-#include "CascadeUtil.h"
+#include "../include/traffic_sign.h"
+#include "../include/CascadeUtil.h"
 
 using namespace cv;
 
@@ -23,8 +23,10 @@ void initSignDetection() {
     cascadeUtil.loadAll();
 }
 
-void detectSign(Mat bgr) {
-    bgr = getTrafficSignROI(bgr);
+void detectSign(Mat inputImage) {
+
+    Mat bgr;
+    bgr = getTrafficSignROI(inputImage);
 
     std::vector<cv::Vec3f> circles = getEdges(bgr);
 
@@ -269,4 +271,13 @@ cv::Mat convertToYCrCb(cv::Mat input) {
     }
 
     return output;
+}
+
+void* sign_detection(void*)
+{
+    initSignDetection();
+    while (true)
+    {
+        detectSign(src);
+    }
 }

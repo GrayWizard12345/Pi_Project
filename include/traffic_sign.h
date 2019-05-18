@@ -29,6 +29,7 @@ extern Scalar orange;
 extern Scalar violet;
 extern Scalar purple;
 extern Scalar pink;
+extern Mat src;
 
 cv::Mat getTrafficSignROI(cv::Mat bgr);
 
