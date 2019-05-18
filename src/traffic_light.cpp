@@ -7,7 +7,6 @@ void* trafficLightLoop(void*) {
     //delay(1000);
     trafficLightStatus = Status::RED_LIGHT;
     printf("\nTraffic light thread\n");
-    delay(1000);
     printf("\nTraffic light thread - width: %d\n", frame.size().width);
     Rect rec(0, 0, width, height / 2);
     int circleCount = 0;
@@ -50,6 +49,7 @@ void* trafficLightLoop(void*) {
             trafficLightStatus = GREEN_LIGHT;
             printf("\nNo Red light detected => Green Light is ON");
         }
+
     }
 }
 

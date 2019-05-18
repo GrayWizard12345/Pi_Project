@@ -23,7 +23,7 @@ Mat frame;
 Mat red_color_frame;
 Mat green_color_frame;
 
-pthread_t video_thread;
+pthread_t motor_thread;
 pthread_t tracer_thread;
 pthread_t ultrasonic_thread;
 pthread_t trafficLightThread;
@@ -74,40 +74,24 @@ void signalHandler(int signum);
 
 void crosswalk_handler(int sigNum);
 
-void *video_loop(void *);
+void *motor_loop(void *);
 
-int main(int argc, char **argv) {
-    signal(SIGINT, signalHandler);
-    signal(SIGUSR1, left_interupt);
-    signal(SIGUSR2, right_interupt);
-    signal(SIGRTMIN + 5, obstacle_signal_handler);
-//    signal(ZEBRA_CROSSING_SIGNAL, crosswalk_handler);
 
-    speed = 80;
-    ratio_ = 3;
-    init_vars();
-
-    printf("Speed %d ", speed);
+void* motor_loop(void*) {
 
     if (wiringPiSetup() == -1)
-        return 0;
+        exit(-1);
+
     pwmInitDCMotor();
     sensor_setup();
     sensor_thread_setup();
 
     if (pthread_mutex_init(&motor_mutex, nullptr) == -1) {
         printf("\nCannot create mutex!\n");
-        return 1;
+        exit(-1);
     }
 
-    if (pthread_create(&video_thread, nullptr, video_loop, nullptr)) {
 
-        fprintf(stderr, "Error creating thread\n");
-        return 1;
-
-    }
-    //Traffic light thread initializations
-    initTrafficLightThread();
 
     turn = STRAIGHT;
     delay(3000);
@@ -118,8 +102,8 @@ int main(int argc, char **argv) {
 
         pthread_mutex_lock(&motor_mutex);
 
-        auto turn_speed = static_cast<int>(speed + (slope - 50) * speed_per_turn);
-
+//        auto turn_speed = static_cast<int>(speed + (slope - 50) * speed_per_turn);
+        int turn_speed = speed / ratio_;
         if (turn_speed > speed)
             turn_speed = speed;
 
@@ -135,21 +119,20 @@ int main(int argc, char **argv) {
             speedRight = turn_speed;
             speedLeft = speed;
         }
-        
+
         if (trafficLightStatus == GREEN_LIGHT) {
             pwm_go_smooth(speedLeft, speedRight);
         }
         //pthread_mutex_unlock(&frame_mutex);
         pthread_mutex_unlock(&motor_mutex);
 
-        printf("\nspeed L: %d, speed R: %d, turn: %d , slope: %lf, traffic_light_status:%d\n", speedLeft, speedRight, turn ,slope, trafficLightStatus);
+        printf("\nspeed L: %d, speed R: %d, turn: %d , slope: %lf, traffic_light_status:%d\n", speedLeft, speedRight,
+               turn, slope, trafficLightStatus);
 
         delay(100);
 
     }
 
-
-    return 0;
 }
 
 void signalHandler(int signum) {
@@ -160,7 +143,7 @@ void signalHandler(int signum) {
     pwmStop();
     stopDCMotor();
     //Destroy all threads
-    pthread_kill(video_thread, 0);
+    pthread_kill(motor_thread, 0);
     pthread_kill(tracer_thread, 0);
     pthread_kill(ultrasonic_thread, 0);
     pthread_kill(trafficLightThread, 0);
@@ -187,7 +170,27 @@ void crosswalk_handler(int sigNum) {
     pthread_mutex_unlock(&motor_mutex);
 }
 
-void *video_loop(void *) {
+int main () {
+
+    signal(SIGINT, signalHandler);
+    signal(SIGUSR1, left_interupt);
+    signal(SIGUSR2, right_interupt);
+    signal(SIGRTMIN + 5, obstacle_signal_handler);
+//    signal(ZEBRA_CROSSING_SIGNAL, crosswalk_handler);
+
+    speed = 80;
+    ratio_ = 3;
+    init_vars();
+
+    printf("Speed %d ", speed);
+
+    if (pthread_create(&motor_thread, nullptr, motor_loop, nullptr)) {
+
+        fprintf(stderr, "Error creating thread\n");
+        return 1;
+
+    }
+
     cv::Mat img_denoise;
     cv::Mat img_edges;
     cv::Mat img_mask;
@@ -198,7 +201,7 @@ void *video_loop(void *) {
 
     if (pthread_mutex_init(&frame_mutex, nullptr) == -1) {
         printf("\nCannot create mutex!\n");
-        return nullptr;
+        return -1;
     }
 
 
@@ -207,17 +210,18 @@ void *video_loop(void *) {
     capture.grab(); //grab the scene using raspicam
     capture.retrieve(src); // retrieve the captured scene as an image and store it in matrix container
 
-    resize(src, src, Size(640, 480));
-    cout << "Width:" << width << endl;
-    frame = src;
-
-    delay(1000);
+    resize(src, src, Size(width, height));
+    cout << "\nWidth:" << src.cols << " Height:" << src.rows << endl;
+    src.copyTo(frame);
 
     video = new VideoWriter("outcpp.avi", CV_FOURCC('M', 'J', 'P', 'G'), 7, Size(width, height));
 
+    //Traffic light thread initializations
+    initTrafficLightThread();
+
+
     //Crosswalk detection thread
-    if(pthread_create(&crosswalk_thread, nullptr, look_for_cross_walk, (void*)&img_mask))
-    {
+    if (pthread_create(&crosswalk_thread, nullptr, look_for_cross_walk, (void *) &img_mask)) {
         printf("\nError wile creating crosswalk thread!\n");
         exit(-1);
     }
@@ -227,12 +231,23 @@ void *video_loop(void *) {
 //        pthread_mutex_lock(&frame_mutex);
         capture.grab(); //grab the scene using raspicam
         capture.retrieve(src); // retrieve the captured scene as an image and store it in matrix container
-        resize(src, src, Size(640, 480));
-        frame = src;
-        
+        imshow("src", src);
+        resize(src, src, Size(width, height));
+
+        imshow("src resized", src);
+
+        src.copyTo(frame);
+
+
+
         img_mask = laneDetector.mask(src);
         img_edges = laneDetector.edgeDetector(img_mask);
         lines = laneDetector.houghLines(img_edges);
+
+        if (show_edges) {
+            imshow("edges", img_edges);
+            imshow("mask", img_mask);
+        }
 
         if (!lines.empty()) {
             left_right_lines = laneDetector.lineSeparation(lines, img_edges);
@@ -252,18 +267,13 @@ void *video_loop(void *) {
 
         video->write(src);
 
-        if(show_edges) {
-            imshow("edges", img_edges);
-//            imshow("mask", img_mask);
-        }
-        imshow("TRAFFIC_LIGHT", red_hue_image);
-        cvWaitKey(1);
+//        imshow("TRAFFIC_LIGHT", red_hue_image);
+//        cvWaitKey(1);
 //        pthread_mutex_unlock(&frame_mutex);
     }
 }
 
-void init_vars()
-{
+void init_vars() {
     read_data();
     speed = stoi(vars["SPEED"]);
     ratio_ = stoi(vars["RATIO"]);
