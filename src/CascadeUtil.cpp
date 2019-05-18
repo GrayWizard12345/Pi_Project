@@ -55,9 +55,9 @@ void CascadeUtil::loadAll() {
 
 CascadeUtil::CascadeUtil() {}
 
-void CascadeUtil::setDetectionArea(cv::Mat bgr, bool isProcessingNeeded) {
+void CascadeUtil::setDetectionArea(cv::Mat bgr, bool isPreProcessingNeeded) {
     cv::Mat gray;
-    if (isProcessingNeeded) {
+    if (isPreProcessingNeeded) {
         cv::cvtColor(bgr, gray, CV_BGR2GRAY);
         equalizeHist(gray, gray);
         gray.copyTo(detectionArea);
@@ -69,31 +69,31 @@ void CascadeUtil::setDetectionArea(cv::Mat bgr, bool isProcessingNeeded) {
 std::vector<cv::Rect> CascadeUtil::detectPedestrian(int width, int height) {
     cascade_pedestrian.detectMultiScale(detectionArea, pedestrian, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE,
                                         cv::Size(width, height));
-    isPedestrianDetected = pedestrian.empty();
+    isPedestrianDetected = !pedestrian.empty();
     return pedestrian;
 }
 
 std::vector<cv::Rect> CascadeUtil::detectStop(int width, int height) {
     cascade_stop.detectMultiScale(detectionArea, stop, 1.1, 3, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(width, height));
-    isStopDetected = pedestrian.empty();
+    isStopDetected = !stop.empty();
     return stop;
 }
 
 std::vector<cv::Rect> CascadeUtil::detectParking(int width, int height) {
     cascade_parking.detectMultiScale(detectionArea, parking, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(width, height));
-    isParkingDetected = parking.empty();
+    isParkingDetected = !parking.empty();
     return parking;
 }
 
 std::vector<cv::Rect> CascadeUtil::detectLeftTurn(int width, int height) {
     cascade_left.detectMultiScale(detectionArea, left_, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(width, height));
-    isLeftTurnDetected = left_.empty();
+    isLeftTurnDetected = !left_.empty();
     return left_;
 }
 
 std::vector<cv::Rect> CascadeUtil::detectRightTurn(int width, int height) {
     cascade_right.detectMultiScale(detectionArea, right_, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(width, height));
-    isRightTurnDetected = right_.empty();
+    isRightTurnDetected = !right_.empty();
     return right_;
 }
 

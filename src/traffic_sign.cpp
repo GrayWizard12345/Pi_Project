@@ -28,44 +28,60 @@ void detectSign(Mat inputImage) {
     Mat bgr;
     bgr = getTrafficSignROI(inputImage);
 
-    std::vector<cv::Vec3f> circles = getEdges(bgr);
+    //region Color detection + cascade
+//    std::vector<cv::Vec3f> circles = getEdges(bgr);
+//
+//    printf("detected circles size %d\n", circles.size());
+//
+//    for (size_t i = 0; i < circles.size(); i++) {
+//        Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+//        int radius = cvRound(circles[i][2]);
+//
+//        printf("x: %d y: %d radius: %d\n", center.x, center.y, radius);
+//        circle(bgr, center, radius, yellow, 2, 8, 0);
+//
+//        Rect circleBox(center.x - radius, center.y - radius, radius * 2, radius * 2);
+//
+//        if (isWithMat(circleBox, bgr)) {
+//
+//            Mat circleROI(bgr, circleBox);
+//
+//            cascadeUtil.setDetectionArea(circleROI);
+//            cascadeUtil.detectAllCircleBlueSigns();
+//
+//            for (unsigned k = 0; k < cascadeUtil.left_.size(); k++) {
+//                rectangle(bgr, cascadeUtil.left_[k], green, 2, 1);
+//                putText(bgr, "left", Point(50, 110), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+//            }
+//
+//
+//            for (unsigned n = 0; n < cascadeUtil.right_.size(); n++) {
+//                rectangle(bgr, cascadeUtil.right_[n], purple, 2, 1);
+//                putText(bgr, "right", Point(50, 150), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+//            }
+//        } else {
+//            printf("outside\n");
+//        }
+//    }
+    //endregion
 
-    printf("detected circles size %d\n", circles.size());
+    cascadeUtil.setDetectionArea(bgr);
 
-    for (size_t i = 0; i < circles.size(); i++) {
-        Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-        int radius = cvRound(circles[i][2]);
+    cascadeUtil.detectRightTurn();
+    cascadeUtil.detectLeftTurn();
+    cascadeUtil.detectParking();
+    cascadeUtil.detectParking();
 
-        printf("x: %d y: %d radius: %d\n", center.x, center.y, radius);
-        circle(bgr, center, radius, yellow, 2, 8, 0);
-
-        Rect circleBox(center.x - radius, center.y - radius, radius * 2, radius * 2);
-
-        if (isWithMat(circleBox, bgr)) {
-
-            Mat circleROI(bgr, circleBox);
-
-            //region Cascade
-            cascadeUtil.setDetectionArea(circleROI);
-            cascadeUtil.detectAllCircleBlueSigns();
-
-            for (unsigned k = 0; k < cascadeUtil.left_.size(); k++) {
-                rectangle(bgr, cascadeUtil.left_[k], green, 2, 1);
-                putText(bgr, "left", Point(50, 110), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
-            }
-
-
-            for (unsigned n = 0; n < cascadeUtil.right_.size(); n++) {
-                rectangle(bgr, cascadeUtil.right_[n], purple, 2, 1);
-                putText(bgr, "right", Point(50, 150), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
-            }
-            //endregion
-
-        } else {
-            printf("outside\n");
-        }
-    }
-
+    if(cascadeUtil.isRightTurnDetected)
+        signDetected = RIGHT_TURN;
+    else if (cascadeUtil.isLeftTurnDetected)
+        signDetected = LEFT_TURN;
+    else if (cascadeUtil.isParkingDetected)
+        signDetected = PARKING;
+    else if (cascadeUtil.isPedestrianDetected)
+        signDetected = PEDESTRIAN;
+    else
+        signDetected = NO_SIGN;
 }
 
 //TODO change the points of ROI
@@ -273,11 +289,9 @@ cv::Mat convertToYCrCb(cv::Mat input) {
     return output;
 }
 
-void* sign_detection(void*)
-{
+void *sign_detection(void *) {
     initSignDetection();
-    while (true)
-    {
+    while (true) {
         detectSign(src);
     }
 }

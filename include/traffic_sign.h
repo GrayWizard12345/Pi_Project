@@ -17,7 +17,7 @@ using cv::Mat;
 using cv::Scalar;
 
 enum Sign {
-    NO_SIGN, LEFT_TURN, RIGHT_TURN, STOP, PEDESTRIAN, CIRCULAR_MOTION
+    NO_SIGN, LEFT_TURN, RIGHT_TURN, STOP, PEDESTRIAN, PARKING
 };
 
 extern Sign signDetected;
@@ -61,5 +61,7 @@ void detectSign(Mat bgr);
 std::vector<cv::Vec3f> getCircles(Mat edges, int high = 100, int low = 15, int minRadius = 60, int maxRadius = 100);
 
 void getRectangles(Mat edges, Mat src);
+
+double angle(cv::Point pt1, cv::Point pt2, cv::Point pt0);
 
 #endif //PI_PROJECT_TRAFFIC_SIGN_H
