@@ -231,10 +231,7 @@ int main () {
 //        pthread_mutex_lock(&frame_mutex);
         capture.grab(); //grab the scene using raspicam
         capture.retrieve(src); // retrieve the captured scene as an image and store it in matrix container
-        imshow("src", src);
         resize(src, src, Size(width, height));
-
-        imshow("src resized", src);
 
         src.copyTo(frame);
 
@@ -244,10 +241,6 @@ int main () {
         img_edges = laneDetector.edgeDetector(img_mask);
         lines = laneDetector.houghLines(img_edges);
 
-        if (show_edges) {
-            imshow("edges", img_edges);
-            imshow("mask", img_mask);
-        }
 
         if (!lines.empty()) {
             left_right_lines = laneDetector.lineSeparation(lines, img_edges);
@@ -265,10 +258,13 @@ int main () {
             turn = STRAIGHT;
         }
 
+        if (show_edges) {
+            imshow("edges", img_edges);
+        }
         video->write(src);
 
 //        imshow("TRAFFIC_LIGHT", red_hue_image);
-//        cvWaitKey(1);
+        cvWaitKey(1);
 //        pthread_mutex_unlock(&frame_mutex);
     }
 }

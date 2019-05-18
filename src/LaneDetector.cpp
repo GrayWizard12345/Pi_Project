@@ -130,7 +130,8 @@ std::vector<std::vector<cv::Vec4i> > LaneDetector::lineSeparation(std::vector<cv
     size_t j = 0;
     cv::Point ini;
     cv::Point fini;
-    double slope_thresh = 0.17;     //TODO changed from 0.3
+    double slope_thresh_low = 0.17;     //TODO changed from 0.3
+    double slope_thresh_high = 200;
     std::vector<double> slopes;
     std::vector<cv::Vec4i> selected_lines;
     std::vector<cv::Vec4i> right_lines, left_lines;
@@ -146,7 +147,7 @@ std::vector<std::vector<cv::Vec4i> > LaneDetector::lineSeparation(std::vector<cv
 
         // If the slope is too horizontal, discard the line
         // If not, save them  and their respective slope
-        if (std::abs(slope) > slope_thresh) {
+        if (std::abs(slope) > slope_thresh_low && std::abs(slope) < slope_thresh_high) {
             slopes.push_back(slope);
             selected_lines.push_back(i);
         }
@@ -335,8 +336,8 @@ void* look_for_cross_walk(void* mat) {
     delay(3000);
 
 
-    Mat crosswalk = *(Mat*)mat;
-
+    Mat crosswalk;
+    (*(Mat*)mat).copyTo(crosswalk);
     cout << crosswalk.cols << endl;
 
     while(true) {
@@ -367,7 +368,7 @@ void* look_for_cross_walk(void* mat) {
         int counter = 0;
         Vec4d lane;
         vector<Point> horizontals;
-        HoughLinesP(crosswalk_grayscale, lines, 1, CV_PI / 180, 20, 40, 30);
+        HoughLinesP(crosswalk_grayscale, lines, 1, CV_PI / 180, 20, 15, 10);
 
         for (auto p:lines) {
             Point ini = cv::Point(p[0], p[1]);
