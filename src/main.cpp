@@ -41,6 +41,9 @@ int speed;
 int ratio_;
 int slowSpeed;
 
+int cascadeMinRadius;
+int cascadeMaxRadius;
+
 LaneDetector laneDetector;
 pthread_mutex_t frame_mutex;
 std::map<std::string, std::string> vars;

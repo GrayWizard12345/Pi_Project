@@ -22,7 +22,7 @@ enum Status {
     GREEN_LIGHT
 };
 
-extern cv::Mat frame;
+extern cv::Mat trafficSignFrame;
 extern cv::Mat red_color_frame;
 extern cv::Mat green_color_frame;
 extern Status trafficLightStatus;

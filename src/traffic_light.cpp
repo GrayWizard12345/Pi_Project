@@ -118,7 +118,7 @@ void *trafficLightLoop(void *) {
     //delay(1000);
     trafficLightStatus = Status::RED_LIGHT;
     printf("\nTraffic light thread\n");
-    printf("\nTraffic light thread - width: %d\n", frame.size().width);
+    printf("\nTraffic light thread - width: %d\n", trafficSignFrame.size().width);
     Rect rec(0, 0, width, height / 2);
     int circleCount = 0;
 
@@ -128,7 +128,7 @@ void *trafficLightLoop(void *) {
     }
 
     while (1) {
-        roi = frame(rec);
+        roi = trafficSignFrame(rec);
 
         while (signDetected == STOP_SIGN);
 
