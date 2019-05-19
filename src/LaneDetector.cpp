@@ -331,19 +331,18 @@ Mat LaneDetector::plotLane(cv::Mat inputImage, std::vector<cv::Point> lane, std:
     return drawing;
 }
 
-void* look_for_cross_walk(void* mat) {
+void* look_for_cross_walk(void*) {
 
     delay(3000);
     zeros = Mat(width, 60, CV_8UC1, 0.0);
     Mat crosswalk_grayscale;
-    Mat output;
     int width;
     int height;
     while (true) {
-        (*(Mat*) mat).copyTo(output);
+
         cout << "Test1" << endl;
-        width = output.cols;
-        height = output.rows;
+        width = src.cols;
+        height = src.rows;
         cout << "\nLOOK FOR CROSSWALK GOT FRAME OF WIDTH :" << width << endl;
 
         zeros = cv::Mat::zeros(Size(width, 60), CV_8UC1);
@@ -351,7 +350,7 @@ void* look_for_cross_walk(void* mat) {
         Rect rect(0, height - 100, width, 50);
         Rect rect2(0, 5, width, 50);
 
-        Mat crosswalk = output(rect);
+        Mat crosswalk = src(rect);
         cvtColor(crosswalk, crosswalk_grayscale, COLOR_RGB2GRAY);
         dilate(crosswalk_grayscale, crosswalk_grayscale, getStructuringElement(MORPH_RECT, Size(6, 6)));
         GaussianBlur(crosswalk_grayscale, crosswalk_grayscale, cv::Size(9, 9), 2, 2);

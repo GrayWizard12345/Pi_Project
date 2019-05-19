@@ -49,6 +49,7 @@ extern int slowSpeed;
 
 extern cv::Mat drawing;
 extern cv::Mat zeros;
+extern cv::Mat src;
 /**
  *@brief Definition of the LaneDetector class. It contains all the functions and variables depicted in the
  *@brief Activity diagram and UML Class diagram.
