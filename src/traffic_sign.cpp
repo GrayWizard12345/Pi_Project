@@ -9,15 +9,6 @@ using namespace cv;
 
 static CascadeUtil cascadeUtil;
 
-Sign signDetected = NO_SIGN;
-
-Scalar blue = Scalar(255, 178, 102);
-Scalar yellow = Scalar(255, 255, 51);
-Scalar green = Scalar(153, 255, 51);
-Scalar orange = Scalar(51, 255, 255);
-Scalar violet = Scalar(127, 0, 255);
-Scalar purple = Scalar(255, 51, 255);
-Scalar pink = Scalar(255, 51, 153);
 
 void initSignDetection() {
     cascadeUtil.loadAll();
@@ -73,13 +64,13 @@ void detectSign(Mat inputImage) {
     cascadeUtil.detectParking();
 
     if (cascadeUtil.isRightTurnDetected)
-        signDetected = RIGHT_TURN;
+        signDetected = RIGHT_TURN_SIGN;
     else if (cascadeUtil.isLeftTurnDetected)
-        signDetected = LEFT_TURN;
+        signDetected = LEFT_TURN_SIGN;
     else if (cascadeUtil.isParkingDetected)
-        signDetected = PARKING;
+        signDetected = PARKING_SIGN;
     else if (cascadeUtil.isPedestrianDetected)
-        signDetected = PEDESTRIAN;
+        signDetected = PEDESTRIAN_SIGN;
     else
         signDetected = NO_SIGN;
 }
@@ -294,13 +285,13 @@ void *sign_detection(void *) {
     initSignDetection();
 
     Sign lastDetectedSign = NO_SIGN;
-    Mat bgr;
+
     while (true) {
-        Mat bgr;
-        bgr = getTrafficSignROI(src);
+        Mat sign_detection_frame;
+        sign_detection_frame = getTrafficSignROI(src);
 
         //region Color detection + cascade
-//    std::vector<cv::Vec3f> circles = getEdges(bgr);
+//    std::vector<cv::Vec3f> circles = getEdges(sign_detection_frame);
 //
 //    printf("detected circles size %d\n", circles.size());
 //
@@ -309,26 +300,26 @@ void *sign_detection(void *) {
 //        int radius = cvRound(circles[i][2]);
 //
 //        printf("x: %d y: %d radius: %d\n", center.x, center.y, radius);
-//        circle(bgr, center, radius, yellow, 2, 8, 0);
+//        circle(sign_detection_frame, center, radius, yellow, 2, 8, 0);
 //
 //        Rect circleBox(center.x - radius, center.y - radius, radius * 2, radius * 2);
 //
-//        if (isWithMat(circleBox, bgr)) {
+//        if (isWithMat(circleBox, sign_detection_frame)) {
 //
-//            Mat circleROI(bgr, circleBox);
+//            Mat circleROI(sign_detection_frame, circleBox);
 //
 //            cascadeUtil.setDetectionArea(circleROI);
 //            cascadeUtil.detectAllCircleBlueSigns();
 //
 //            for (unsigned k = 0; k < cascadeUtil.left_.size(); k++) {
-//                rectangle(bgr, cascadeUtil.left_[k], green, 2, 1);
-//                putText(bgr, "left", Point(50, 110), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+//                rectangle(sign_detection_frame, cascadeUtil.left_[k], green, 2, 1);
+//                putText(sign_detection_frame, "left", Point(50, 110), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
 //            }
 //
 //
 //            for (unsigned n = 0; n < cascadeUtil.right_.size(); n++) {
-//                rectangle(bgr, cascadeUtil.right_[n], purple, 2, 1);
-//                putText(bgr, "right", Point(50, 150), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+//                rectangle(sign_detection_frame, cascadeUtil.right_[n], purple, 2, 1);
+//                putText(sign_detection_frame, "right", Point(50, 150), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
 //            }
 //        } else {
 //            printf("outside\n");
@@ -336,7 +327,7 @@ void *sign_detection(void *) {
 //    }
         //endregion
 
-        cascadeUtil.setDetectionArea(bgr);
+        cascadeUtil.setDetectionArea(sign_detection_frame);
 
         cascadeUtil.detectRightTurn();
         cascadeUtil.detectLeftTurn();
@@ -359,29 +350,26 @@ void *sign_detection(void *) {
         else
             signDetected = NO_SIGN;
 
+
         for (auto r: cascadeUtil.stop) {
-            rectangle(bgr, r, yellow);
+            rectangle(sign_detection_frame, r, yellow);
         }
 
         for (auto r : cascadeUtil.left_) {
-            rectangle(bgr, r, green);
+            rectangle(sign_detection_frame, r, green);
         }
 
         for (auto r : cascadeUtil.right_) {
-            rectangle(bgr, r, purple);
+            rectangle(sign_detection_frame, r, purple);
         }
 
         for (auto r : cascadeUtil.pedestrian) {
-            rectangle(bgr, r, orange);
+            rectangle(sign_detection_frame, r, orange);
         }
 
         for (auto r : cascadeUtil.parking) {
-            rectangle(bgr, r, blue);
+            rectangle(sign_detection_frame, r, blue);
         }
-
-        imshow("Traffic Sign", bgr);
-        waitKey(0);
-
 
         lastDetectedSign = signDetected;
     }

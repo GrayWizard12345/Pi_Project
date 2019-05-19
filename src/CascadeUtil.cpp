@@ -10,7 +10,7 @@ using namespace cv;
 //TODO change the path for Raspberry Pi
 
 void CascadeUtil::loadLeftTurn() {
-    if (!cascade_left.load("/home/madina/cascades/cascade_left.xml"))
+    if (!cascade_left.load("cascades/cascade_left.xml"))
         printf("left - not successfully loaded\n");
     else
         printf("left - success\n");
@@ -18,28 +18,28 @@ void CascadeUtil::loadLeftTurn() {
 
 
 void CascadeUtil::loadRightTurn() {
-    if (!cascade_right.load("/home/madina/cascades/cascade_right.xml"))
+    if (!cascade_right.load("cascades/cascade_right.xml"))
         printf("right - not successfully loaded\n");
     else
         printf("right - success\n");
 }
 
 void CascadeUtil::loadParking() {
-    if (!cascade_parking.load("/media/madina/Files/Projects/opencv/Pi_Project/src/cascades/cascade_parking.xml"))
+    if (!cascade_parking.load("cascades/cascade_parking.xml"))
         printf("parking - not successfully loaded\n");
     else
         printf("parking - success\n");
 }
 
 void CascadeUtil::loadPedestrian() {
-    if (!cascade_pedestrian.load("/media/madina/Files/Projects/opencv/Pi_Project/src/cascades/cascade_pedestrian.xml"))
+    if (!cascade_pedestrian.load("cascades/cascade_pedestrian.xml"))
         printf("pedestrian - not successfully loaded\n");
     else
         printf("pedestrian - success\n");
 }
 
 void CascadeUtil::loadStop() {
-    if (!cascade_stop.load("/media/madina/Files/Projects/opencv/Pi_Project/src/cascades/cascade_stop.xml"))
+    if (!cascade_stop.load("cascades/stop.xml"))
         printf("stop - not successfully loaded\n");
     else
         printf("stop - success\n");

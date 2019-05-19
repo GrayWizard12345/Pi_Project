@@ -143,8 +143,8 @@ void *IR_tracer_loop(void *) {
         if (left_ir_val == WHITE && right_ir_val == WHITE) {
             //TODO maybe add stop here
             pthread_mutex_lock(&motor_mutex);
-            pwmStop();
-            delay(400);
+            pwmGoBack(speed);
+            delay(200);
             pthread_mutex_unlock(&motor_mutex);
         }
 
@@ -300,5 +300,12 @@ void* check_if_suddent_pedestrian(){
         {
             obstacle_avoidance();
         }
+    obstacle_counter++;
 
+//    if(obstacle_counter > 1)
+//    {
+//        obstacle_avoidance();
+//        obstacle_counter++;
+//    }
 }
+

@@ -31,6 +31,7 @@ extern Scalar purple;
 extern Scalar pink;
 extern Mat src;
 
+
 cv::Mat getTrafficSignROI(cv::Mat bgr);
 
 cv::Rect MatchingMethod(cv::Mat img, cv::Mat templ, int match_method = cv::TM_CCORR_NORMED);
@@ -63,5 +64,6 @@ std::vector<cv::Vec3f> getCircles(Mat edges, int high = 100, int low = 15, int m
 void getRectangles(Mat edges, Mat src);
 
 double angle(cv::Point pt1, cv::Point pt2, cv::Point pt0);
+void *sign_detection(void *);
 
 #endif //PI_PROJECT_TRAFFIC_SIGN_H

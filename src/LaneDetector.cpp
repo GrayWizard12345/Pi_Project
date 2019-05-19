@@ -334,78 +334,132 @@ Mat LaneDetector::plotLane(cv::Mat inputImage, std::vector<cv::Point> lane, std:
 void* look_for_cross_walk(void* mat) {
 
     delay(3000);
+    zeros = Mat(width, 60, CV_8UC1, 0.0);
+    Mat crosswalk_grayscale;
+    Mat output;
+    int width;
+    int height;
+    while (true) {
+        output = *(Mat*) mat;
+        cout << "Test1" << endl;
+        width = output.cols;
+        height = output.rows;
+        cout << "\nLOOK FOR CROSSWALK GOT FRAME OF WIDTH :" << width << endl;
 
+        zeros = cv::Mat::zeros(Size(width, 60), CV_8UC1);
 
-    Mat crosswalk;
-    (*(Mat*)mat).copyTo(crosswalk);
-    cout << crosswalk.cols << endl;
+        Rect rect(0, height - 100, width, 50);
+        Rect rect2(0, 5, width, 50);
 
-    while(true) {
-
-
-        Mat crosswalk_grayscale;
-
+        Mat crosswalk = output(rect);
         cvtColor(crosswalk, crosswalk_grayscale, COLOR_RGB2GRAY);
+        dilate(crosswalk_grayscale, crosswalk_grayscale, getStructuringElement(MORPH_RECT, Size(6, 6)));
         GaussianBlur(crosswalk_grayscale, crosswalk_grayscale, cv::Size(9, 9), 2, 2);
-        dilate(crosswalk_grayscale, crosswalk_grayscale, getStructuringElement(MORPH_RECT, Size(3, 3)));
+        erode(crosswalk_grayscale, crosswalk_grayscale, getStructuringElement(MORPH_ELLIPSE, Size(9, 9)));
 
-        inRange(crosswalk_grayscale, Scalar(140), Scalar(255), crosswalk_grayscale);
+        Mat combi = zeros(rect2);
 
-        erode(crosswalk_grayscale, crosswalk_grayscale, getStructuringElement(MORPH_ELLIPSE, Size(3, 3)));
-        blur(crosswalk_grayscale, crosswalk_grayscale, cv::Size(3, 3));
-
-        erode(crosswalk_grayscale, crosswalk_grayscale, getStructuringElement(MORPH_RECT, Size(9, 9)));
+        crosswalk_grayscale.copyTo(combi);
 
         int lowThreshold = 30;
         int ratio = 3;
         int kernel_size = 3;
-        cv::Canny(crosswalk_grayscale, crosswalk_grayscale, lowThreshold, lowThreshold * ratio, kernel_size);
-        dilate(crosswalk_grayscale, crosswalk_grayscale, getStructuringElement(MORPH_ELLIPSE, Size(2, 2)));
+        cv::Canny(zeros, zeros, lowThreshold, lowThreshold * ratio, kernel_size);
 
-//        imshow("Processed", crosswalk_grayscale);
+        vector<vector<Point>> contours;
+        vector<Point> approx;
+        std::vector<cv::Vec4i> hierarchy;
+        cv::findContours(zeros, contours, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
 
-        vector<Vec4i> lines;
+        drawing = cv::Mat::zeros(zeros.size(), CV_8UC3);
+
         int counter = 0;
-        Vec4d lane;
-        vector<Point> horizontals;
-        HoughLinesP(crosswalk_grayscale, lines, 1, CV_PI / 180, 20, 15, 10);
 
-        for (auto p:lines) {
-            Point ini = cv::Point(p[0], p[1]);
-            Point fini = cv::Point(p[2], p[3]);
+        vector<vector<Point>> horizontals;
+        int c = 0;
+        for (int i = 0; i < contours.size(); i++) {
+            cv::Scalar color = cv::Scalar(0, 100, 0);
+            drawContours(drawing, contours, i, color, 1, 8, hierarchy, 0, cv::Point());
 
-            if (abs(p[1] - p[3]) < 15) {
-                horizontals.push_back(ini);
-                horizontals.push_back(fini);
-                line(crosswalk, ini, fini, cv::Scalar(0, 0, 255), 3);
-                counter++;
+
+            approxPolyDP(contours[i], approx, arcLength(Mat(contours[i]), true) * 0.05, true);
+            //0.5
+            Scalar color1(0, 255, 0);
+            Scalar color2(0, 0, 255);
+            if (approx.size() == 4) {
+
+                Scalar colorus = color2;
+                if (c % 2 == 0)
+                    colorus = color1;
+                c++;
+
+                double len1 = sqrt(pow(approx[0].x - approx[1].x, 2) + pow(approx[0].y - approx[1].y, 2));
+                double len2 = sqrt(pow(approx[1].x - approx[2].x, 2) + pow(approx[1].y - approx[2].y, 2));
+                double len = max(len1, len2);
+
+                if (len > 15) {
+
+                    vector<vector<Point>> hlines;
+                    for (int m = 0, n = 0; m < 4; m++, n++) {
+                        if (n == 3)
+                            n = -1;
+                        if (abs(approx[m].y - approx[n + 1].y) < 30) {
+                            vector<Point> arr(2);
+                            arr[0] = approx[m];
+                            arr[1] = approx[n + 1];
+                            hlines.push_back(arr);
+                        }
+                    }
+                    vector<Point> min(2);
+                    if (!hlines.empty()) {
+                        min = hlines[0];
+                        for (auto l: hlines) {
+                            if (l[0].y + l[1].y < min[0].y + min[1].y) {
+                                min = l;
+                            }
+                        }
+                    }
+
+                    horizontals.push_back(min);
+
+
+                    cv::line(drawing, approx[0], approx[1], colorus);
+                    cv::line(drawing, approx[1], approx[2], colorus);
+                    cv::line(drawing, approx[2], approx[3], colorus);
+                    cv::line(drawing, approx[3], approx[0], colorus);
+
+                    counter++;
+                }
+
             }
         }
 
+        cout << "\nHorizontal lines " << horizontals.size() << endl;
         if (!horizontals.empty()) {
-            fitLine(horizontals, lane, CV_DIST_L2, 0, 0.01, 0.01);
-            auto x0 = static_cast<int>(lane[2]);                       // a point on the line
-            auto y0 = static_cast<int>(lane[3]);
-            auto x1 = static_cast<int>(x0 - 200 * lane[0]);     // add a vector of length 200
-            auto y1 = static_cast<int>(y0 - 200 * lane[1]);   // using the unit vector
-            line(crosswalk, cv::Point(x0, y0), cv::Point(x1, y1), cv::Scalar(0), 3);
-
-            if (abs(lane[1] / lane[0]) < 0.4 && counter >= 8) {
-                crosswalk_detected = true;
-            } else {
-                crosswalk_detected = false;
+            Vec4d lane;
+            vector<Point> points;
+            for (auto p:horizontals) {
+                points.push_back(p[0]);
+                points.push_back(p[1]);
             }
-
-            if (crosswalk_detected) {
+            fitLine(points, lane, CV_DIST_L2, 0, 0.01, 0.01);
+            int x0 = lane[2];                       // a point on the line
+            int y0 = lane[3];
+            int x1 = x0 - 200 * lane[0];     // add a vector of length 200
+            int y1 = y0 - 200 * lane[1];   // using the unit vector
+            line(crosswalk, cv::Point(x0, y0), cv::Point(x1, y1), cv::Scalar(0), 3);
+            if (abs(lane[1] / lane[0]) < 0.4 && counter >= 5)
+            {
+                ir_tracers_are_on = 0;
                 int temp = speed;
-                ir_tracers_are_on = false;
-                speed = speed - 30;
+                speed = slowSpeed;
                 delay(3000);
                 speed = temp;
-                ir_tracers_are_on = true;
+                ir_tracers_are_on = 1;
+
+                cout << "CROSSROAD WITH SLOPE:" << lane[1] / lane[0] << " WAS DETECTED1" << endl;
             }
-
         }
-
     }
+
 }

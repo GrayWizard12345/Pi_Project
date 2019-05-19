@@ -70,6 +70,22 @@ cv::Mat red_hue_image;
 
 int obstacle_avoidance_right_turn_delay;
 
+cv::Mat drawing;
+cv::Mat zeros;
+
+Sign signDetected = NO_SIGN;
+
+Scalar blue = Scalar(255, 178, 102);
+Scalar yellow = Scalar(255, 255, 51);
+Scalar green = Scalar(153, 255, 51);
+Scalar orange = Scalar(51, 255, 255);
+Scalar violet = Scalar(127, 0, 255);
+Scalar purple = Scalar(255, 51, 255);
+Scalar pink = Scalar(255, 51, 153);
+
+
+pthread_t sign_thread;
+
 void init_vars();
 
 void signalHandler(int signum);
@@ -101,7 +117,7 @@ void *motor_loop(void *) {
     int regularSpeed = speed;
     while (true) {
 
-        pthread_mutex_lock(&motor_mutex);
+
 
 //        auto turn_speed = static_cast<int>(speed + (slope - 50) * speed_per_turn);
 
@@ -121,7 +137,10 @@ void *motor_loop(void *) {
 
         //region Stop sign handling
         if (signDetected == STOP_SIGN) {
+            pthread_mutex_lock(&motor_mutex);
+            pwmStop();
             delay(5000);
+            pthread_mutex_unlock(&motor_mutex);
         }
         //endregion
 
@@ -144,10 +163,12 @@ void *motor_loop(void *) {
         }
 
         if (trafficLightStatus == GREEN_LIGHT) {
+            pthread_mutex_lock(&motor_mutex);
             pwm_go_smooth(speedLeft, speedRight);
+            pthread_mutex_unlock(&motor_mutex);
         }
         //pthread_mutex_unlock(&frame_mutex);
-        pthread_mutex_unlock(&motor_mutex);
+
 
         printf("\nspeed L: %d, speed R: %d, turn: %d , slope: %lf, traffic_light_status:%d\n", speedLeft, speedRight,
                turn, slope, trafficLightStatus);
@@ -242,6 +263,13 @@ int main() {
     //Traffic light thread initializations
     initTrafficLightThread();
 
+//    if (pthread_create(&sign_thread, nullptr, sign_detection, nullptr)) {
+//
+//        fprintf(stderr, "Error creating thread\n");
+//        return 1;
+//    }
+
+
     //Crosswalk detection thread
     if (pthread_create(&crosswalk_thread, nullptr, look_for_cross_walk, (void *) &img_mask)) {
         printf("\nError wile creating crosswalk thread!\n");
@@ -274,6 +302,12 @@ int main() {
 
             laneDetector.plotLane(src, lane, turnAsString[turn] + " " + to_string(slope), "Lane Detection");
 
+//            if(!zeros.empty())
+//            {
+//                imshow("Crosswalk", zeros);
+//                imshow("Detecting Crosswalk", drawing);
+//            }
+
         } else {
             turn = STRAIGHT;
         }
@@ -282,6 +316,8 @@ int main() {
             imshow("edges", img_edges);
         }
         video->write(src);
+
+
 
 //        imshow("TRAFFIC_LIGHT", red_hue_image);
         cvWaitKey(1);
