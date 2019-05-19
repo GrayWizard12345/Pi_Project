@@ -41,3 +41,5 @@ extern cv::Mat red_hue_image;
  * @param src is used to get a ROI from captured frame
  */
     int initTrafficLightThread();
+
+void killSignThread();

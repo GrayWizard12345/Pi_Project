@@ -10,7 +10,6 @@
 #include "../include/LaneDetector.hpp"
 #include "../include/traffic_light.hpp"
 #include "../include/config_reader.h"
-#include "../include/traffic_sign.h"
 #include <cmath>
 
 using namespace std;
@@ -20,7 +19,7 @@ using namespace cv;
 
 raspicam::RaspiCam_Cv capture;
 Mat src;
-Mat frame;
+Mat trafficSignFrame;
 Mat red_color_frame;
 Mat green_color_frame;
 
@@ -117,8 +116,6 @@ void *motor_loop(void *) {
     int regularSpeed = speed;
     while (true) {
 
-
-
 //        auto turn_speed = static_cast<int>(speed + (slope - 50) * speed_per_turn);
 
         //region Pedestrian sign handling
@@ -195,6 +192,8 @@ void signalHandler(int signum) {
     // Closes all the windows
     destroyAllWindows();
 
+    killSignThread();
+
     capture.release();
     video->release();
 
@@ -256,7 +255,7 @@ int main() {
 
     resize(src, src, Size(width, height));
     cout << "\nWidth:" << src.cols << " Height:" << src.rows << endl;
-    src.copyTo(frame);
+    src.copyTo(trafficSignFrame);
 
     video = new VideoWriter("outcpp.avi", CV_FOURCC('M', 'J', 'P', 'G'), 7, Size(width, height));
 
@@ -283,7 +282,7 @@ int main() {
         capture.retrieve(src); // retrieve the captured scene as an image and store it in matrix container
         resize(src, src, Size(width, height));
 
-        src.copyTo(frame);
+        src.copyTo(trafficSignFrame);
 
         img_mask = laneDetector.mask(src);
         img_edges = laneDetector.edgeDetector(img_mask);

@@ -1,7 +1,108 @@
 #include "../include/traffic_light.hpp"
+#include "../include/traffic_sign.h"
+#include "../include/CascadeUtil.h"
 
 using namespace cv;
 using namespace std;
+
+Mat roi;
+pthread_t signThread;
+
+//TODO verify the area for false positive
+void *sign_detect(void *) {
+
+    delay(1000);
+    Sign lastDetectedSign = NO_SIGN;
+    CascadeUtil cascadeUtil;
+    cascadeUtil.loadAll();
+
+    while (true) {
+        Mat sign_detection_frame = roi;
+
+        //region Color detection + cascade
+//    std::vector<cv::Vec3f> circles = getEdges(sign_detection_frame);
+//
+//    printf("detected circles size %d\n", circles.size());
+//
+//    for (size_t i = 0; i < circles.size(); i++) {
+//        Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+//        int radius = cvRound(circles[i][2]);
+//
+//        printf("x: %d y: %d radius: %d\n", center.x, center.y, radius);
+//        circle(sign_detection_frame, center, radius, yellow, 2, 8, 0);
+//
+//        Rect circleBox(center.x - radius, center.y - radius, radius * 2, radius * 2);
+//
+//        if (isWithMat(circleBox, sign_detection_frame)) {
+//
+//            Mat circleROI(sign_detection_frame, circleBox);
+//
+//            cascadeUtil.setDetectionArea(circleROI);
+//            cascadeUtil.detectAllCircleBlueSigns();
+//
+//            for (unsigned k = 0; k < cascadeUtil.left_.size(); k++) {
+//                rectangle(sign_detection_frame, cascadeUtil.left_[k], green, 2, 1);
+//                putText(sign_detection_frame, "left", Point(50, 110), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+//            }
+//
+//
+//            for (unsigned n = 0; n < cascadeUtil.right_.size(); n++) {
+//                rectangle(sign_detection_frame, cascadeUtil.right_[n], purple, 2, 1);
+//                putText(sign_detection_frame, "right", Point(50, 150), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+//            }
+//        } else {
+//            printf("outside\n");
+//        }
+//    }
+        //endregion
+
+        cascadeUtil.setDetectionArea(sign_detection_frame);
+
+        cascadeUtil.detectRightTurn();
+        cascadeUtil.detectLeftTurn();
+        cascadeUtil.detectParking();
+        cascadeUtil.detectParking();
+
+        if (cascadeUtil.isStopDetected && lastDetectedSign == STOP_SIGN) {
+            signDetected = NO_SIGN;
+            continue;
+        } else if (cascadeUtil.isStopDetected)
+            signDetected = STOP_SIGN;
+        else if (cascadeUtil.isRightTurnDetected)
+            signDetected = RIGHT_TURN_SIGN;
+        else if (cascadeUtil.isLeftTurnDetected)
+            signDetected = LEFT_TURN_SIGN;
+        else if (cascadeUtil.isParkingDetected)
+            signDetected = PARKING_SIGN;
+        else if (cascadeUtil.isPedestrianDetected)
+            signDetected = PEDESTRIAN_SIGN;
+        else
+            signDetected = NO_SIGN;
+
+
+        for (auto r: cascadeUtil.stop) {
+            rectangle(sign_detection_frame, r, yellow);
+        }
+
+        for (auto r : cascadeUtil.left_) {
+            rectangle(sign_detection_frame, r, green);
+        }
+
+        for (auto r : cascadeUtil.right_) {
+            rectangle(sign_detection_frame, r, purple);
+        }
+
+        for (auto r : cascadeUtil.pedestrian) {
+            rectangle(sign_detection_frame, r, orange);
+        }
+
+        for (auto r : cascadeUtil.parking) {
+            rectangle(sign_detection_frame, r, blue);
+        }
+
+        lastDetectedSign = signDetected;
+    }
+}
 
 void *trafficLightLoop(void *) {
     //delay(1000);
@@ -10,11 +111,17 @@ void *trafficLightLoop(void *) {
     printf("\nTraffic light thread - width: %d\n", frame.size().width);
     Rect rec(0, 0, width, height / 2);
     int circleCount = 0;
+
+    if (pthread_create(&signThread, nullptr, sign_detect, nullptr)) {
+        fprintf(stderr, "Error creating sign thread\n");
+        return nullptr;
+    }
+
     while (1) {
+        roi = frame(rec);
 
         while (signDetected == STOP_SIGN);
 
-        Mat roi = frame(rec);
         Mat hsv;
         cvtColor(roi, hsv, COLOR_BGR2HSV);
 
@@ -53,6 +160,10 @@ void *trafficLightLoop(void *) {
         }
 
     }
+}
+
+void killSignThread(){
+    pthread_kill(signThread, 0);
 }
 
 int initTrafficLightThread() {

@@ -29,8 +29,8 @@ extern Scalar orange;
 extern Scalar violet;
 extern Scalar purple;
 extern Scalar pink;
-extern Mat src;
 
+extern Mat trafficSignDetection;
 
 cv::Mat getTrafficSignROI(cv::Mat bgr);
 
@@ -64,6 +64,6 @@ std::vector<cv::Vec3f> getCircles(Mat edges, int high = 100, int low = 15, int m
 void getRectangles(Mat edges, Mat src);
 
 double angle(cv::Point pt1, cv::Point pt2, cv::Point pt0);
-void *sign_detection(void *);
+void *sign_detect(void *);
 
 #endif //PI_PROJECT_TRAFFIC_SIGN_H
