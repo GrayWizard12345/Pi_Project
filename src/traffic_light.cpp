@@ -19,7 +19,7 @@ void *sign_detect(void *) {
 
     while (true) {
         sign_detection_frame = roi;
-        printf("detection\n");
+        printf("detection - 0\n");
 
         //region Color detection + cascade
 //    std::vector<cv::Vec3f> circles = getEdges(sign_detection_frame);
@@ -68,6 +68,7 @@ void *sign_detect(void *) {
 
         if (cascadeUtil.isStopDetected && lastDetectedSign == STOP_SIGN) {
             signDetected = NO_SIGN;
+            printf("detection - 01\n");
             continue;
         } else if (cascadeUtil.isStopDetected){
             signDetected = STOP_SIGN;
@@ -114,6 +115,7 @@ void *sign_detect(void *) {
         }
 
         lastDetectedSign = signDetected;
+        printf("detection - 0\n");
     }
 }
 
