@@ -270,14 +270,14 @@ int sensor_thread_setup() {
         exit(-1);
     }
 
-    if (pthread_create(&ultrasonic_thread, nullptr, ultrasonic_loop, nullptr)) {
-        printf("Failed to create a thread!");
-        exit(-1);
-    }
-
     if(!ultrasonic_is_on)
     {
         if (pthread_create(&ir_thread, nullptr, ir_loop, nullptr)) {
+            printf("Failed to create a thread!");
+            exit(-1);
+        }
+    }else{
+        if (pthread_create(&ultrasonic_thread, nullptr, ultrasonic_loop, nullptr)) {
             printf("Failed to create a thread!");
             exit(-1);
         }

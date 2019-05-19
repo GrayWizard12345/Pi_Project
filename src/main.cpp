@@ -283,7 +283,7 @@ int main() {
 
 
     //Crosswalk detection thread
-    if (pthread_create(&crosswalk_thread, nullptr, look_for_cross_walk, (void *) &img_mask)) {
+    if (pthread_create(&crosswalk_thread, nullptr, look_for_cross_walk, (void *) &src)) {
         printf("\nError wile creating crosswalk thread!\n");
         exit(-1);
     }

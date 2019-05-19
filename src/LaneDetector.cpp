@@ -340,7 +340,7 @@ void* look_for_cross_walk(void* mat) {
     int width;
     int height;
     while (true) {
-        output = *(Mat*) mat;
+        (*(Mat*) mat).copyTo(output);
         cout << "Test1" << endl;
         width = output.cols;
         height = output.rows;
