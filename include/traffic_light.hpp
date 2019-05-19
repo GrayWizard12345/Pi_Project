@@ -30,6 +30,10 @@ extern pthread_t trafficLightThread;
 extern pthread_mutex_t motor_mutex;
 extern int width;
 extern int height;
+
+extern int cascadeMinRadius;
+extern int cascadeMaxRadius;
+
 extern cv::Mat red_hue_image;
 /**
  *  @brief the thread function for red and green light detection
