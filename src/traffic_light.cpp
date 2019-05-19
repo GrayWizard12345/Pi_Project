@@ -15,9 +15,11 @@ void *sign_detect(void *) {
     Sign lastDetectedSign = NO_SIGN;
     CascadeUtil cascadeUtil;
     cascadeUtil.loadAll();
+    printf("sign detection started\n");
 
     while (true) {
         sign_detection_frame = roi;
+        printf("detection\n");
 
         //region Color detection + cascade
 //    std::vector<cv::Vec3f> circles = getEdges(sign_detection_frame);
@@ -61,7 +63,8 @@ void *sign_detect(void *) {
         cascadeUtil.detectRightTurn(cascadeMinRadius, cascadeMaxRadius);
         cascadeUtil.detectLeftTurn(cascadeMinRadius, cascadeMaxRadius);
         cascadeUtil.detectParking(cascadeMinRadius, cascadeMaxRadius);
-        cascadeUtil.detectParking(cascadeMinRadius, cascadeMaxRadius);
+        cascadeUtil.detectPedestrian(cascadeMinRadius, cascadeMaxRadius);
+        cascadeUtil.detectStop(cascadeMinRadius, cascadeMaxRadius);
 
         if (cascadeUtil.isStopDetected && lastDetectedSign == STOP_SIGN) {
             signDetected = NO_SIGN;
