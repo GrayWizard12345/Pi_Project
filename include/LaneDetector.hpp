@@ -46,6 +46,7 @@ extern int ir_tracers_are_on;
 extern int width;
 extern int height;
 extern int slowSpeed;
+
 extern cv::Mat drawing;
 extern cv::Mat zeros;
 /**

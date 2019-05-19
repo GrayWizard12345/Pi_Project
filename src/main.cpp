@@ -314,13 +314,14 @@ int main() {
         if (show_edges) {
             imshow("edges", img_edges);
         }
+
         video->write(src);
 
 
-
-//        imshow("TRAFFIC_LIGHT", red_hue_image);
+        imshow("TRAFFIC_LIGHT", red_hue_image);
         cvWaitKey(1);
-//        pthread_mutex_unlock(&frame_mutex);
+
+//    pthread_mutex_unlock(&frame_mutex);
     }
 }
 
@@ -338,4 +339,6 @@ void init_vars() {
     width = stoi(vars["WIDTH"]);
     height = stoi(vars["HEIGHT"]);
     slowSpeed = stoi(vars["SLOW_SPEED"]);
+    cascadeMinRadius = stoi(vars["CASCADE_MIN_RADIUS"]);
+    cascadeMaxRadius = stoi(vars["CASCADE_MAX_RADIUS"]);
 }

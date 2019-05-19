@@ -52,15 +52,15 @@ public:
 
     void loadAll();
 
-    std::vector<cv::Rect> detectPedestrian(int width = 100, int height = 100);
+    std::vector<cv::Rect> detectPedestrian(int minRadius = 60, int maxRadius = 100);
 
-    std::vector<cv::Rect> detectParking(int width = 100, int height = 100);
+    std::vector<cv::Rect> detectParking(int minRadius = 60, int maxRadius = 100);
 
-    std::vector<cv::Rect> detectLeftTurn(int width = 150, int height = 150);
+    std::vector<cv::Rect> detectLeftTurn(int minRadius = 60, int maxRadius = 150);
 
-    std::vector<cv::Rect> detectRightTurn(int width = 150, int height = 150);
+    std::vector<cv::Rect> detectRightTurn(int minRadius = 60, int maxRadius = 150);
 
-    std::vector<cv::Rect> detectStop(int width = 100, int height = 100);
+    std::vector<cv::Rect> detectStop(int minRadius = 60, int maxRadius = 100);
 
     /**
      * @brief detects all signs in bgr, and sets according vector and boolean values

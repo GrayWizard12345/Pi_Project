@@ -66,33 +66,35 @@ void CascadeUtil::setDetectionArea(cv::Mat bgr, bool isPreProcessingNeeded) {
     }
 }
 
-std::vector<cv::Rect> CascadeUtil::detectPedestrian(int width, int height) {
+std::vector<cv::Rect> CascadeUtil::detectPedestrian(int minRadius, int maxRadius) {
     cascade_pedestrian.detectMultiScale(detectionArea, pedestrian, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE,
-                                        cv::Size(width, height));
+                                        cv::Size(minRadius, minRadius), cv::Size(maxRadius, maxRadius));
     isPedestrianDetected = !pedestrian.empty();
     return pedestrian;
 }
 
-std::vector<cv::Rect> CascadeUtil::detectStop(int width, int height) {
-    cascade_stop.detectMultiScale(detectionArea, stop, 1.1, 3, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(width, height));
+std::vector<cv::Rect> CascadeUtil::detectStop(int minRadius, int maxRadius) {
+    cascade_pedestrian.detectMultiScale(detectionArea, stop, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE,
+                                        cv::Size(minRadius, minRadius), cv::Size(maxRadius, maxRadius));
     isStopDetected = !stop.empty();
-    return stop;
+    return pedestrian;
 }
 
-std::vector<cv::Rect> CascadeUtil::detectParking(int width, int height) {
-    cascade_parking.detectMultiScale(detectionArea, parking, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(width, height));
+std::vector<cv::Rect> CascadeUtil::detectParking(int minRadius, int maxRadius) {
+    cascade_pedestrian.detectMultiScale(detectionArea, parking, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE,
+                                        cv::Size(minRadius, minRadius), cv::Size(maxRadius, maxRadius));
     isParkingDetected = !parking.empty();
-    return parking;
+    return pedestrian;
 }
 
-std::vector<cv::Rect> CascadeUtil::detectLeftTurn(int width, int height) {
-    cascade_left.detectMultiScale(detectionArea, left_, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(width, height));
+std::vector<cv::Rect> CascadeUtil::detectLeftTurn(int minRadius, int maxRadius) {
+    cascade_left.detectMultiScale(detectionArea, left_, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(minRadius, minRadius), cv::Size(maxRadius, maxRadius));
     isLeftTurnDetected = !left_.empty();
     return left_;
 }
 
-std::vector<cv::Rect> CascadeUtil::detectRightTurn(int width, int height) {
-    cascade_right.detectMultiScale(detectionArea, right_, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(width, height));
+std::vector<cv::Rect> CascadeUtil::detectRightTurn(int minRadius, int maxRadius) {
+    cascade_right.detectMultiScale(detectionArea, right_, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE, cv::Size(minRadius, minRadius), cv::Size(maxRadius, maxRadius));
     isRightTurnDetected = !right_.empty();
     return right_;
 }

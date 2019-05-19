@@ -58,10 +58,10 @@ void *sign_detect(void *) {
 
         cascadeUtil.setDetectionArea(sign_detection_frame);
 
-        cascadeUtil.detectRightTurn();
-        cascadeUtil.detectLeftTurn();
-        cascadeUtil.detectParking();
-        cascadeUtil.detectParking();
+        cascadeUtil.detectRightTurn(cascadeMinRadius, cascadeMaxRadius);
+        cascadeUtil.detectLeftTurn(cascadeMinRadius, cascadeMaxRadius);
+        cascadeUtil.detectParking(cascadeMinRadius, cascadeMaxRadius);
+        cascadeUtil.detectParking(cascadeMinRadius, cascadeMaxRadius);
 
         if (cascadeUtil.isStopDetected && lastDetectedSign == STOP_SIGN) {
             signDetected = NO_SIGN;
@@ -162,7 +162,7 @@ void *trafficLightLoop(void *) {
     }
 }
 
-void killSignThread(){
+void killSignThread() {
     pthread_kill(signThread, 0);
 }
 

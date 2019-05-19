@@ -8,6 +8,9 @@ RATIO = 7
 
 BEFORE_TURN_DELAY = 0
 
+CASCADE_MIN_RADIUS = 60
+CASCADE_MAX_RADIUS = 100
+
 #Edge detection Configurations
 
 COLOR_DETECTION = 0
