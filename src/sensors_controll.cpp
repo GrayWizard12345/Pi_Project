@@ -20,6 +20,11 @@ using namespace cv;
 #define TRIG_PIN 28
 #define ECHO_PIN 29
 
+
+#define LEFT_IR_PIN 27
+#define RIGHT_IR_PIN 26
+
+
 #define LEFT_SIGNAL_NUM SIGUSR1
 #define RIGHT_SIGNAL_NUM SIGUSR2
 #define STOP_SIGNAL SIGRTMIN + 5
@@ -51,6 +56,7 @@ int obstacle_counter = 0;
 pthread_mutex_t motor_mutex;
 extern pthread_t tracer_thread;
 extern pthread_t ultrasonic_thread;
+extern pthread_t ir_thread;
 
 
 void* check_if_suddent_pedestrian();
@@ -63,6 +69,9 @@ void sensor_setup() {
 
     pinMode(TRIG_PIN, OUTPUT);
     pinMode(ECHO_PIN, INPUT);
+
+    pinMode(LEFT_IR_PIN, INPUT);
+    pinMode(RIGHT_IR_PIN, INPUT);
 
 }
 
@@ -115,6 +124,7 @@ void *wait_right_ir_thread(void *) {
 
 void *IR_tracer_loop(void *) {
 
+    int special_counter = 0;
 
     while (1) {
         pthread_t left_ir_thread;
@@ -141,10 +151,51 @@ void *IR_tracer_loop(void *) {
                 raise(RIGHT_SIGNAL_NUM);
         }
         if (left_ir_val == WHITE && right_ir_val == WHITE) {
-            //TODO maybe add stop here
+            if(special_counter == 0)
+            {
+                ir_tracers_are_on = 0;
+                delay(2500);
+                ir_tracers_are_on = 1;
+                special_counter++;
+            } else{
+                pthread_mutex_lock(&motor_mutex);
+                pwmGoBack(speed);
+                delay(200);
+                pthread_mutex_unlock(&motor_mutex);
+            }
+        }
+
+    }
+
+}
+
+
+void* ir_loop(void * arg)
+{
+    int left_ir_value;
+    int right_ir_value;
+    while(1)
+    {
+        left_ir_value = digitalRead(LEFT_IR_PIN);
+        right_ir_value = digitalRead(RIGHT_IR_PIN);
+
+        if(left_ir_value == 0 && right_ir_value == 0)
+        {
+
+            obstacle_counter++;
             pthread_mutex_lock(&motor_mutex);
-            pwmGoBack(speed);
-            delay(200);
+            while (left_ir_value == 0 && right_ir_value == 0)
+            {
+
+
+                pwmStop();
+                check_if_suddent_pedestrian();
+                delay(100);
+
+
+                left_ir_value = digitalRead(LEFT_IR_PIN);
+                right_ir_value = digitalRead(RIGHT_IR_PIN);
+            }
             pthread_mutex_unlock(&motor_mutex);
         }
 
@@ -219,10 +270,17 @@ int sensor_thread_setup() {
         exit(-1);
     }
 
-
     if (pthread_create(&ultrasonic_thread, nullptr, ultrasonic_loop, nullptr)) {
         printf("Failed to create a thread!");
         exit(-1);
+    }
+
+    if(!ultrasonic_is_on)
+    {
+        if (pthread_create(&ir_thread, nullptr, ir_loop, nullptr)) {
+            printf("Failed to create a thread!");
+            exit(-1);
+        }
     }
 
 }
@@ -296,11 +354,10 @@ void* check_if_suddent_pedestrian(){
     int reds = countNonZero(red_hue_image);
     cout << reds << "number of red pixels on the frame" << endl;
     if(obstacle_counter > 1)
-        if(reds < 2000)
+        if(reds < 3000)
         {
             obstacle_avoidance();
         }
-    obstacle_counter++;
 
 //    if(obstacle_counter > 1)
 //    {

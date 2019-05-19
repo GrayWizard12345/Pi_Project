@@ -28,6 +28,7 @@ pthread_t tracer_thread;
 pthread_t ultrasonic_thread;
 pthread_t trafficLightThread;
 pthread_t crosswalk_thread;
+pthread_t ir_thread;
 
 VideoWriter *video;
 
@@ -108,7 +109,7 @@ void *motor_loop(void *) {
     }
 
     turn = STRAIGHT;
-    delay(3000);
+    delay(10000);
     int speedLeft = speed, speedRight = speed;
     double max_turning = speed / ratio_;
     double speed_per_turn = (speed - max_turning) / (50 - 100);
@@ -188,6 +189,7 @@ void signalHandler(int signum) {
     pthread_kill(tracer_thread, 0);
     pthread_kill(ultrasonic_thread, 0);
     pthread_kill(trafficLightThread, 0);
+    pthread_kill(ir_thread, 0);
 
     // Closes all the windows
     destroyAllWindows();
