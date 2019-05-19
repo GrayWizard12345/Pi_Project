@@ -141,6 +141,14 @@ void *motor_loop(void *) {
         }
         //endregion
 
+        if (signDetected == PARKING_SIGN){
+            pthread_mutex_lock(&motor_mutex);
+            pwmStop();
+            delay(2000);
+            pthread_mutex_unlock(&motor_mutex);
+            raise(SIGINT);
+        }
+
         int turn_speed = speed / ratio_;
 
         if (turn_speed > speed)
@@ -173,7 +181,6 @@ void *motor_loop(void *) {
         delay(100);
 
     }
-
 }
 
 void signalHandler(int signum) {

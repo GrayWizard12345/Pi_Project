@@ -30,8 +30,6 @@ extern Scalar violet;
 extern Scalar purple;
 extern Scalar pink;
 
-extern Mat trafficSignDetection;
-
 cv::Mat getTrafficSignROI(cv::Mat bgr);
 
 cv::Rect MatchingMethod(cv::Mat img, cv::Mat templ, int match_method = cv::TM_CCORR_NORMED);
