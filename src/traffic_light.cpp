@@ -19,44 +19,7 @@ void *sign_detect(void *) {
 
     while (true) {
         sign_detection_frame = roi;
-        printf("detection - 0\n");
-
-        //region Color detection + cascade
-//    std::vector<cv::Vec3f> circles = getEdges(sign_detection_frame);
-//
-//    printf("detected circles size %d\n", circles.size());
-//
-//    for (size_t i = 0; i < circles.size(); i++) {
-//        Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-//        int radius = cvRound(circles[i][2]);
-//
-//        printf("x: %d y: %d radius: %d\n", center.x, center.y, radius);
-//        circle(sign_detection_frame, center, radius, yellow, 2, 8, 0);
-//
-//        Rect circleBox(center.x - radius, center.y - radius, radius * 2, radius * 2);
-//
-//        if (isWithMat(circleBox, sign_detection_frame)) {
-//
-//            Mat circleROI(sign_detection_frame, circleBox);
-//
-//            cascadeUtil.setDetectionArea(circleROI);
-//            cascadeUtil.detectAllCircleBlueSigns();
-//
-//            for (unsigned k = 0; k < cascadeUtil.left_.size(); k++) {
-//                rectangle(sign_detection_frame, cascadeUtil.left_[k], green, 2, 1);
-//                putText(sign_detection_frame, "left", Point(50, 110), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
-//            }
-//
-//
-//            for (unsigned n = 0; n < cascadeUtil.right_.size(); n++) {
-//                rectangle(sign_detection_frame, cascadeUtil.right_[n], purple, 2, 1);
-//                putText(sign_detection_frame, "right", Point(50, 150), FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
-//            }
-//        } else {
-//            printf("outside\n");
-//        }
-//    }
-        //endregion
+        printf("detection - 1\n");
 
         cascadeUtil.setDetectionArea(sign_detection_frame);
 
@@ -68,6 +31,7 @@ void *sign_detect(void *) {
 
         if (cascadeUtil.isStopDetected && lastDetectedSign == STOP_SIGN) {
             signDetected = NO_SIGN;
+            delay(1000);
             printf("detection - 01\n");
             continue;
         } else if (cascadeUtil.isStopDetected){
@@ -135,7 +99,9 @@ void *trafficLightLoop(void *) {
     while (1) {
         roi = trafficSignFrame(rec);
 
-        while (signDetected == STOP_SIGN);
+        while (signDetected == STOP_SIGN){
+            delay(2000);
+        }
 
         Mat hsv;
         cvtColor(roi, hsv, COLOR_BGR2HSV);

@@ -50,9 +50,8 @@ extern int obstacle_avoidance_go_dalay;
 
 int left_ir_val;
 int right_ir_val;
-int dist = 0;
 int last_turn = STRAIGHT;
-int obstacle_counter = 0;
+extern int obstacle_counter;
 pthread_mutex_t motor_mutex;
 extern pthread_t tracer_thread;
 extern pthread_t ultrasonic_thread;
@@ -83,8 +82,7 @@ void left_interupt(int sig) {
     pwmGoBack(speed);
     delay(100);
     pwm_left_point_turn(speed);
-    while (!get_left_lane);
-    delay(175);
+    delay(400);
     //pwmStop();
     pthread_mutex_unlock(&motor_mutex);
 
@@ -96,14 +94,13 @@ void right_interupt(int sig) {
     pwmGoBack(speed);
     delay(100);
     pwm_right_point_turn(speed);
-    while (!get_right_lane);
-    delay(175);
+    delay(400);
     //pwmStop();
     pthread_mutex_unlock(&motor_mutex);
 }
 
 void *wait_left_ir_thread(void *) {
-    for (int i = 0; i < 25; i++) {
+    for (int i = 0; i < 10; i++) {
         left_ir_val = get_left_lane;
         if (left_ir_val == WHITE)
             return nullptr;
@@ -113,7 +110,7 @@ void *wait_left_ir_thread(void *) {
 }
 
 void *wait_right_ir_thread(void *) {
-    for (int i = 0; i < 25; i++) {
+    for (int i = 0; i < 10; i++) {
         right_ir_val = get_right_lane;
         if (right_ir_val == WHITE)
             return nullptr;
@@ -151,19 +148,12 @@ void *IR_tracer_loop(void *) {
                 raise(RIGHT_SIGNAL_NUM);
         }
         if (left_ir_val == WHITE && right_ir_val == WHITE) {
-            if(special_counter == 0)
-            {
                 ir_tracers_are_on = 0;
-                delay(2500);
+                delay(1200);
                 ir_tracers_are_on = 1;
-                special_counter++;
-            } else{
-                pthread_mutex_lock(&motor_mutex);
-                pwmGoBack(speed);
-                delay(200);
-                pthread_mutex_unlock(&motor_mutex);
-            }
         }
+
+        delay(50);
 
     }
 
@@ -172,19 +162,18 @@ void *IR_tracer_loop(void *) {
 
 void* ir_loop(void * arg)
 {
-    int left_ir_value;
     int right_ir_value;
     while(1)
     {
-        left_ir_value = digitalRead(LEFT_IR_PIN);
+
         right_ir_value = digitalRead(RIGHT_IR_PIN);
 
-        if(left_ir_value == 0 && right_ir_value == 0)
+        if(right_ir_value == 0)
         {
 
-            obstacle_counter++;
+
             pthread_mutex_lock(&motor_mutex);
-            while (left_ir_value == 0 && right_ir_value == 0)
+            while (right_ir_value == 0)
             {
 
 
@@ -193,7 +182,6 @@ void* ir_loop(void * arg)
                 delay(100);
 
 
-                left_ir_value = digitalRead(LEFT_IR_PIN);
                 right_ir_value = digitalRead(RIGHT_IR_PIN);
             }
             pthread_mutex_unlock(&motor_mutex);
@@ -205,6 +193,7 @@ void* ir_loop(void * arg)
 
 void obstacle_signal_handler(int signum) {
     pthread_mutex_lock(&motor_mutex);
+    int dist = 0;
     obstacle_counter++;
     do {
         auto temp = static_cast<int>(measure_distance(30000));
@@ -213,7 +202,7 @@ void obstacle_signal_handler(int signum) {
         pwmStop();
         check_if_suddent_pedestrian();
         delay(100);
-    } while (dist < 10);
+    } while (dist < 20);
     pthread_mutex_unlock(&motor_mutex);
 }
 
@@ -248,15 +237,18 @@ long recordPulseLength() {
 
 void *ultrasonic_loop(void *) {
     printf("\nUltrasonic loop has started!");
+    int dist = 500;
     while (1) {
-        auto temp = static_cast<int>(measure_distance(30000));
+        int temp = (int)(measure_distance(30000));
         if (temp != 0)
             dist = temp;
-        if (dist < 10) {
+        cout << "Dist1 :" << dist << endl;
+        if (dist < 20) {
             if (ultrasonic_is_on)
             {
+                cout << "Dist2 :" << dist << endl << endl;
                 raise(SIGRTMIN + 5);
-                printf("\nObstacle detected!!");
+                printf("\nObstacle detected!! Dist:%d", dist);
             }
         }
     }
@@ -288,51 +280,26 @@ int sensor_thread_setup() {
 
 void obstacle_avoidance()
 {
+    int speed = 40;
     ir_tracers_are_on = 0;
-    switch (last_turn){
-        case STRAIGHT:
 
-            pwm_left_point_turn(speed);
-            delay(obstacle_avoidance_left_turn_delay);
+    pwmGoBack(speed);
+    delay(700);
 
-            pwm_go_smooth(speed, speed);
-            delay(obstacle_avoidance_go_dalay);
+    pwm_left_point_turn(speed);
+    delay(obstacle_avoidance_left_turn_delay);
 
-            pwm_right_point_turn(obstacle_avoidance_left_turn_delay);
-            delay(obstacle_avoidance_right_turn_delay);
 
-            pwm_go_smooth(speed, speed);
-            delay(obstacle_avoidance_go_dalay);
+    pwm_go_smooth(speed, speed);
+    delay(obstacle_avoidance_go_dalay);
 
-            pwm_right_point_turn(obstacle_avoidance_left_turn_delay);
-            delay(obstacle_avoidance_right_turn_delay);
 
-            pwm_go_smooth(speed, speed);
-            delay(obstacle_avoidance_go_dalay);
 
-            pwm_left_point_turn(speed);
-            delay(obstacle_avoidance_left_turn_delay);
+    pwm_right_point_turn(obstacle_avoidance_left_turn_delay);
+    delay(obstacle_avoidance_right_turn_delay);
 
-            last_turn = LEFT;
-            break;
-
-        case LEFT:
-
-            pwm_right_point_turn(obstacle_avoidance_left_turn_delay);
-            delay(obstacle_avoidance_right_turn_delay);
-
-            pwm_go_smooth(speed, speed);
-            delay(obstacle_avoidance_go_dalay);
-
-            pwm_left_point_turn(speed);
-            delay(obstacle_avoidance_left_turn_delay);
-            last_turn = RIGHT;
-            break;
-
-        case RIGHT:
-
-            break;
-    }
+    pwm_go_smooth(speed, speed);
+    delay(obstacle_avoidance_go_dalay);
 
     ir_tracers_are_on = 1;
 }
@@ -340,24 +307,10 @@ void obstacle_avoidance()
 
 void* check_if_suddent_pedestrian(){
 
-    Mat checkFrame_hsv;
-    cv::cvtColor(src, checkFrame_hsv, cv::COLOR_BGR2HSV);
-    Mat redLowerMask, redHigherMask;
-    inRange(checkFrame_hsv, Scalar(0, 120, 70), Scalar(10, 255, 255), redLowerMask);
-    inRange(checkFrame_hsv, Scalar(170, 120, 70), Scalar(180, 255, 255), redHigherMask);
-    Mat red_hue_image;
-    //use hue values from the both ranges (masks)
-    addWeighted(redLowerMask, 1.0, redHigherMask, 1.0, 0.0, red_hue_image);
-    erode(red_hue_image, red_hue_image, getStructuringElement(MORPH_ELLIPSE, Size( 9, 9)));
-    dilate(red_hue_image, red_hue_image, getStructuringElement(MORPH_ELLIPSE, Size( 3, 3)));
-    GaussianBlur(red_hue_image, red_hue_image, cv::Size(9, 9), 2, 2);
-    int reds = countNonZero(red_hue_image);
-    cout << reds << "number of red pixels on the frame" << endl;
-    if(obstacle_counter > 1)
-        if(reds < 3000)
-        {
+    if(obstacle_counter)
             obstacle_avoidance();
-        }
+    else
+        delay(40);
 
 //    if(obstacle_counter > 1)
 //    {

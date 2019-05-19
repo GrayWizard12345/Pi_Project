@@ -33,6 +33,7 @@ pthread_t ir_thread;
 
 VideoWriter *video;
 
+int obstacle_counter = 0;
 static int turn;
 Status trafficLightStatus = GREEN_LIGHT;
 
@@ -138,8 +139,9 @@ void *motor_loop(void *) {
         //region Stop sign handling
         if (signDetected == STOP_SIGN) {
             pthread_mutex_lock(&motor_mutex);
+            obstacle_counter++;
             pwmStop();
-            delay(5000);
+            delay(2000);
             pthread_mutex_unlock(&motor_mutex);
         }
         //endregion
@@ -162,12 +164,12 @@ void *motor_loop(void *) {
             speedRight = speed;
         } else if (turn == Turn::LEFT) {
             delay(del);
-            speedRight = speed;
+            speedRight = speed + 25;
             speedLeft = turn_speed;
         } else if (turn == Turn::RIGHT) {
             delay(del);
             speedRight = turn_speed;
-            speedLeft = speed;
+            speedLeft = speed + 25;
         }
 
         if (trafficLightStatus == GREEN_LIGHT) {
@@ -265,9 +267,6 @@ int main() {
     capture.retrieve(retr); // retrieve the captured scene as an image and store it in matrix container
     resize(retr, src, Size(width, height));
 
-    sensor_setup();
-    sensor_thread_setup();
-
     cout << "\nWidth:" << src.cols << " Height:" << src.rows << endl;
     src.copyTo(trafficSignFrame);
 
@@ -288,10 +287,10 @@ int main() {
 
 
     //Crosswalk detection thread
-    if (pthread_create(&crosswalk_thread, nullptr, look_for_cross_walk, nullptr)) {
-        printf("\nError wile creating crosswalk thread!\n");
-        exit(-1);
-    }
+//    if (pthread_create(&crosswalk_thread, nullptr, look_for_cross_walk, nullptr)) {
+//        printf("\nError wile creating crosswalk thread!\n");
+//        exit(-1);
+//    }
 
     while (true) {
 
