@@ -244,7 +244,7 @@ int main() {
         return 1;
 
     }
-
+    Mat retr;
     cv::Mat img_denoise;
     cv::Mat img_edges;
     cv::Mat img_mask;
@@ -262,8 +262,8 @@ int main() {
     capture.open(); // activate the raspicam object
 
     capture.grab(); //grab the scene using raspicam
-    capture.retrieve(src); // retrieve the captured scene as an image and store it in matrix container
-    resize(src, src, Size(width, height));
+    capture.retrieve(retr); // retrieve the captured scene as an image and store it in matrix container
+    resize(retr, src, Size(width, height));
 
     sensor_setup();
     sensor_thread_setup();
