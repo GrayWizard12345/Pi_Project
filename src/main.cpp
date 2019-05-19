@@ -263,8 +263,11 @@ int main() {
 
     capture.grab(); //grab the scene using raspicam
     capture.retrieve(src); // retrieve the captured scene as an image and store it in matrix container
-
     resize(src, src, Size(width, height));
+
+    sensor_setup();
+    sensor_thread_setup();
+
     cout << "\nWidth:" << src.cols << " Height:" << src.rows << endl;
     src.copyTo(trafficSignFrame);
 
