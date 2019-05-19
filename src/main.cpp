@@ -104,8 +104,6 @@ void *motor_loop(void *) {
         exit(-1);
 
     pwmInitDCMotor();
-    sensor_setup();
-    sensor_thread_setup();
 
     if (pthread_mutex_init(&motor_mutex, nullptr) == -1) {
         printf("\nCannot create mutex!\n");
@@ -271,6 +269,10 @@ int main() {
     src.copyTo(trafficSignFrame);
 
     video = new VideoWriter("outcpp.avi", CV_FOURCC('M', 'J', 'P', 'G'), 7, Size(width, height));
+
+    sensor_setup();
+    sensor_thread_setup();
+
 
     //Traffic light thread initializations
     initTrafficLightThread();
