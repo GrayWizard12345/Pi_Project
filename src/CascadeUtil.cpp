@@ -74,14 +74,14 @@ std::vector<cv::Rect> CascadeUtil::detectPedestrian(int minRadius, int maxRadius
 }
 
 std::vector<cv::Rect> CascadeUtil::detectStop(int minRadius, int maxRadius) {
-    cascade_pedestrian.detectMultiScale(detectionArea, stop, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE,
+    cascade_stop.detectMultiScale(detectionArea, stop, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE,
                                         cv::Size(minRadius, minRadius), cv::Size(maxRadius, maxRadius));
     isStopDetected = !stop.empty();
     return pedestrian;
 }
 
 std::vector<cv::Rect> CascadeUtil::detectParking(int minRadius, int maxRadius) {
-    cascade_pedestrian.detectMultiScale(detectionArea, parking, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE,
+    cascade_parking.detectMultiScale(detectionArea, parking, 1.1, 2, 0 | CV_HAAR_SCALE_IMAGE,
                                         cv::Size(minRadius, minRadius), cv::Size(maxRadius, maxRadius));
     isParkingDetected = !parking.empty();
     return pedestrian;
