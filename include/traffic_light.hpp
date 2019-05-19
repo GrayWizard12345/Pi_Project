@@ -30,6 +30,7 @@ extern pthread_t trafficLightThread;
 extern pthread_mutex_t motor_mutex;
 extern int width;
 extern int height;
+extern Mat sign_detection_frame;
 
 extern int cascadeMinRadius;
 extern int cascadeMaxRadius;

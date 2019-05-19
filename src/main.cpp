@@ -22,6 +22,7 @@ Mat src;
 Mat trafficSignFrame;
 Mat red_color_frame;
 Mat green_color_frame;
+Mat sign_detection_frame;
 
 pthread_t motor_thread;
 pthread_t tracer_thread;
@@ -323,6 +324,8 @@ int main() {
         }
 
         video->write(src);
+
+        imshow("Traffic sign", sign_detection_frame);
 
 
         imshow("TRAFFIC_LIGHT", red_hue_image);
