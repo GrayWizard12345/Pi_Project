@@ -22,7 +22,7 @@ enum Status {
     GREEN_LIGHT
 };
 
-extern cv::Mat frame;
+extern cv::Mat trafficSignFrame;
 extern cv::Mat red_color_frame;
 extern cv::Mat green_color_frame;
 extern Status trafficLightStatus;
@@ -30,6 +30,7 @@ extern pthread_t trafficLightThread;
 extern pthread_mutex_t motor_mutex;
 extern int width;
 extern int height;
+extern Mat sign_detection_frame;
 
 extern int cascadeMinRadius;
 extern int cascadeMaxRadius;

@@ -22,6 +22,7 @@ Mat src;
 Mat trafficSignFrame;
 Mat red_color_frame;
 Mat green_color_frame;
+Mat sign_detection_frame;
 
 pthread_t motor_thread;
 pthread_t tracer_thread;
@@ -40,6 +41,9 @@ string turnAsString[] = {"L", "S", "R"};
 int speed;
 int ratio_;
 int slowSpeed;
+
+int cascadeMinRadius;
+int cascadeMaxRadius;
 
 LaneDetector laneDetector;
 pthread_mutex_t frame_mutex;
@@ -325,6 +329,8 @@ int main() {
         }
 
         video->write(src);
+
+        imshow("Traffic sign", sign_detection_frame);
 
 
         imshow("TRAFFIC_LIGHT", red_hue_image);

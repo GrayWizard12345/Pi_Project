@@ -17,7 +17,7 @@ void *sign_detect(void *) {
     cascadeUtil.loadAll();
 
     while (true) {
-        Mat sign_detection_frame = roi;
+        sign_detection_frame = roi;
 
         //region Color detection + cascade
 //    std::vector<cv::Vec3f> circles = getEdges(sign_detection_frame);
@@ -66,16 +66,26 @@ void *sign_detect(void *) {
         if (cascadeUtil.isStopDetected && lastDetectedSign == STOP_SIGN) {
             signDetected = NO_SIGN;
             continue;
-        } else if (cascadeUtil.isStopDetected)
+        } else if (cascadeUtil.isStopDetected){
             signDetected = STOP_SIGN;
-        else if (cascadeUtil.isRightTurnDetected)
+            cv::putText(sign_detection_frame, "Stop", cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+        }
+        else if (cascadeUtil.isRightTurnDetected){
             signDetected = RIGHT_TURN_SIGN;
-        else if (cascadeUtil.isLeftTurnDetected)
+            cv::putText(sign_detection_frame, "Right", cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+        }
+        else if (cascadeUtil.isLeftTurnDetected){
             signDetected = LEFT_TURN_SIGN;
-        else if (cascadeUtil.isParkingDetected)
+            cv::putText(sign_detection_frame, "Left", cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+        }
+        else if (cascadeUtil.isParkingDetected){
             signDetected = PARKING_SIGN;
-        else if (cascadeUtil.isPedestrianDetected)
+            cv::putText(sign_detection_frame, "Parking", cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+        }
+        else if (cascadeUtil.isPedestrianDetected){
             signDetected = PEDESTRIAN_SIGN;
+            cv::putText(sign_detection_frame, "Pedestrian", cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
+        }
         else
             signDetected = NO_SIGN;
 
@@ -108,7 +118,7 @@ void *trafficLightLoop(void *) {
     //delay(1000);
     trafficLightStatus = Status::RED_LIGHT;
     printf("\nTraffic light thread\n");
-    printf("\nTraffic light thread - width: %d\n", frame.size().width);
+    printf("\nTraffic light thread - width: %d\n", trafficSignFrame.size().width);
     Rect rec(0, 0, width, height / 2);
     int circleCount = 0;
 
@@ -118,7 +128,7 @@ void *trafficLightLoop(void *) {
     }
 
     while (1) {
-        roi = frame(rec);
+        roi = trafficSignFrame(rec);
 
         while (signDetected == STOP_SIGN);
 
