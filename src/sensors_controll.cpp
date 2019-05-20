@@ -65,6 +65,8 @@ extern pthread_t tracer_thread;
 extern pthread_t ultrasonic_thread;
 extern pthread_t ir_thread;
 
+int obstacleCounter = 0;
+
 //void *check_if_suddent_pedestrian();
 
 void sensor_setup() {
@@ -200,21 +202,26 @@ void *ir_loop(void *arg) {
             printf("IR loop - obstacle detected\n");
             pthread_mutex_lock(&motor_mutex);
 
-
             if (isRedPixelsDetected()) {
-                pwmGoBack(speed);
-                delay(700);
-                pwm_left_point_turn(70);
-                delay(400);
-                pwmGo(speed);
-                delay(700);
+                delay(6000);
             } else {
-                pwmGoBack(speed);
-                delay(700);
-                pwm_right_point_turn(70);
-                delay(400);
-                pwmGo(speed);
-                delay(700);
+                if (obstacleCounter == 0) {
+                    pwmGoBack(speed);
+                    delay(700);
+                    pwm_left_point_turn(70);
+                    delay(400);
+                    pwmGo(speed);
+                    delay(700);
+                } else if(obstacleCounter == 1) {
+                    pwmGoBack(speed);
+                    delay(700);
+                    pwm_right_point_turn(70);
+                    delay(400);
+                    pwmGo(speed);
+                    delay(700);
+                }
+
+                obstacleCounter++;
             }
 
             pthread_mutex_unlock(&motor_mutex);
