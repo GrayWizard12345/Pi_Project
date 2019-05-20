@@ -66,6 +66,11 @@ int obstacle_avoidance_left_turn_delay;
 int obstacle_avoidance_right_turn_delay;
 int obstacle_avoidance_go_dalay;
 int obstacle_avoidance_back_delay;
+int obstacle_last_go;
+int ir_delay;
+int turn_delay;
+
+Mat ultrasonic_frame;
 
 int width;
 
@@ -86,8 +91,6 @@ Scalar violet = Scalar(127, 0, 255);
 Scalar purple = Scalar(255, 51, 255);
 Scalar pink = Scalar(255, 51, 153);
 
-
-pthread_t sign_thread;
 
 void init_vars();
 
@@ -170,22 +173,9 @@ void *motor_loop(void *) {
             speedRight = motionSpeed + 25;
             speedLeft = turn_speed;
         } else if (turn == Turn::RIGHT) {
-            if (slope <= 0.7) {
-                delay(del);
-                speedRight = turn_speed;
-                speedLeft = motionSpeed + 20;
-                delay(70);
-            } else if (slope <= 0.8) {
-                delay(del);
-                speedRight = turn_speed - 7;
-                speedLeft = motionSpeed + 25;
-                delay(90);
-            } else {
-                delay(del);
-                speedRight = turn_speed - 15;
-                speedLeft = motionSpeed + 30;
-                delay(100);
-            }
+            delay(del);
+            speedRight = turn_speed;
+            speedLeft = motionSpeed + 20;
         }
 
         if (trafficLightStatus == GREEN_LIGHT) {
@@ -195,6 +185,7 @@ void *motor_loop(void *) {
         }
         //pthread_mutex_unlock(&frame_mutex);
 
+        delay(70);
 
         printf("\nspeed L: %d, speed R: %d, turn: %d , slope: %lf, traffic_light_status:%d\n", speedLeft, speedRight,
                turn, slope, trafficLightStatus);
@@ -283,6 +274,7 @@ int main() {
 
     cout << "\nWidth:" << src.cols << " Height:" << src.rows << endl;
     src.copyTo(trafficSignFrame);
+    src.copyTo(ultrasonic_frame);
 
     video = new VideoWriter("outcpp.avi", CV_FOURCC('M', 'J', 'P', 'G'), 7, Size(width, height));
 
@@ -308,6 +300,7 @@ int main() {
         resize(retr, src, Size(width, height));
 
         src.copyTo(trafficSignFrame);
+        src.copyTo(ultrasonic_frame);
 
         img_mask = laneDetector.mask(src);
         img_edges = laneDetector.edgeDetector(img_mask);
@@ -342,7 +335,7 @@ int main() {
 
         video->write(src);
 
-        imshow("Traffic sign", sign_detection_frame);
+//        imshow("Traffic sign", sign_detection_frame);
 
 
         imshow("TRAFFIC_LIGHT", red_hue_image);
@@ -364,6 +357,9 @@ void init_vars() {
     obstacle_avoidance_right_turn_delay = stoi(vars["OBSTACLE_AVOIDANCE_RIGHT_TURN_DELAY"]);
     obstacle_avoidance_go_dalay = stoi(vars["OBSTACLE_AVOIDANCE_GO_DELAY"]);
     obstacle_avoidance_back_delay = stoi(vars["OBSTACLE_AVOIDANCE_BACK_DELAY"]);
+    obstacle_last_go = stoi(vars["OBSTACLE_LAST_GO"]);
+    turn_delay = stoi(vars["OBSTACLE_TURN_DELAY"]);
+    ir_delay = stoi(vars["IR_DELAY"]);
     width = stoi(vars["WIDTH"]);
     height = stoi(vars["HEIGHT"]);
     slowSpeed = stoi(vars["SLOW_SPEED"]);

@@ -125,7 +125,7 @@ void pwm_left_point_turn(int speed) {
     softPwmWrite(IN2_PIN, speed);
     softPwmWrite(IN3_PIN, speed);
     softPwmWrite(IN4_PIN, MIN_SPEED);
-    printf("PWM point left turn\n");
+//    printf("PWM point left turn\n");
 }
 
 void pwm_right_point_turn(int speed) {

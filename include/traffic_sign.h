@@ -30,38 +30,4 @@ extern Scalar violet;
 extern Scalar purple;
 extern Scalar pink;
 
-cv::Mat getTrafficSignROI(cv::Mat bgr);
-
-cv::Rect MatchingMethod(cv::Mat img, cv::Mat templ, int match_method = cv::TM_CCORR_NORMED);
-
-Mat
-getEdges(cv::Mat bgr);
-
-
-/**
- * @brief checks whether the rectangle is within Mat
- * @param circleBox
- * @param bgr
- * @return
- */
-bool isWithMat(cv::Rect circleBox, cv::Mat bgr);
-
-
-cv::Mat getRedMask(cv::Mat roi);
-
-cv::Mat convertToYCrCb(cv::Mat input);
-
-Mat gammaCorrection(const Mat &img, const double gamma_);
-
-void initSignDetection();
-
-void detectSign(Mat bgr);
-
-std::vector<cv::Vec3f> getCircles(Mat edges, int high = 100, int low = 15, int minRadius = 60, int maxRadius = 100);
-
-void getRectangles(Mat edges, Mat src);
-
-double angle(cv::Point pt1, cv::Point pt2, cv::Point pt0);
-void *sign_detect(void *);
-
 #endif //PI_PROJECT_TRAFFIC_SIGN_H

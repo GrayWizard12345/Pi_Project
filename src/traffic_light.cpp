@@ -20,7 +20,7 @@ void *sign_detect(void *) {
     cascadeUtil.loadAll();
 
     while (true) {
-        sign_detection_frame = roi;
+        roi.copyTo(sign_detection_frame);
         printf("detection - 1\n");
 
         cascadeUtil.setDetectionArea(sign_detection_frame);
@@ -32,7 +32,7 @@ void *sign_detect(void *) {
         cascadeUtil.detectStop(cascadeMinRadius, cascadeMaxRadius);
 
         if (lastDetectedSign == PEDESTRIAN_SIGN) {
-            delay(3000);
+            delay(2000);
         }
 
         if (cascadeUtil.isStopDetected && lastDetectedSign == STOP_SIGN) {
@@ -55,8 +55,11 @@ void *sign_detect(void *) {
         cv::putText(sign_detection_frame, signAsString[signDetected], cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL,
                     3, cvScalar(0, 255, 0), 1, CV_AA);
 
-        if (signDetected != NO_SIGN)
+        if (signDetected != NO_SIGN){
+            cout << "***************************\n";
             cout << signAsString[signDetected] << " - sign detected\n";
+            cout << "***************************\n";
+        }
 
 
         for (auto r: cascadeUtil.stop) {
