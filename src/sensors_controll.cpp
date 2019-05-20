@@ -163,47 +163,6 @@ void *IR_tracer_loop(void *) {
 
 }
 
-void obstacle_avoidance() {
-    int speed = 40;
-    pthread_mutex_lock(&motor_mutex);
-    ir_tracers_are_on = 0;
-
-    pwm_right_point_turn(speed);
-    int i = 0;
-    while (right_ir_value == 0) {
-        i++;
-        delay(10);
-        right_ir_value = digitalRead(RIGHT_IR_PIN);
-    }
-    delay(10 * i);
-    pwmGo(speed);
-    delay(turn_delay);
-
-    pwm_left_point_turn(speed + 30);
-    while (right_ir_val == WHITE){
-        right_ir_value = digitalRead(RIGHT_IR_PIN);
-    }
-
-
-    pwmGo(speed);
-    while (right_ir_value == 1){
-        right_ir_value = digitalRead(RIGHT_IR_PIN);
-    }
-
-    pwm_left_point_turn(speed + 30);
-    while (right_ir_value == 0) {
-        right_ir_value = digitalRead(RIGHT_IR_PIN);
-        i++;
-        delay(10);
-    }
-    delay(10 * i);
-    pwmGo(speed);
-    delay(turn_delay);
-
-    ir_tracers_are_on = 1;
-    pthread_mutex_unlock(&motor_mutex);
-}
-
 bool isRedPixelsDetected() {
 
     Mat hsv;
@@ -239,20 +198,26 @@ void *ir_loop(void *arg) {
         if (right_ir_value == 0) {
 
             printf("IR loop - obstacle detected\n");
+            pthread_mutex_lock(&motor_mutex);
+
 
             if (isRedPixelsDetected()) {
-                pthread_mutex_lock(&motor_mutex);
-                while (right_ir_value == 0) {
-                    pwmStop();
-                    delay(50);
-                    right_ir_value = digitalRead(RIGHT_IR_PIN);
-                    pthread_mutex_unlock(&motor_mutex);
-                }
+                pwmGoBack(speed);
+                delay(700);
+                pwm_left_point_turn(70);
+                delay(400);
+                pwmGo(speed);
+                delay(700);
             } else {
-                pwmStop();
-                delay(100);
-                obstacle_avoidance();
+                pwmGoBack(speed);
+                delay(700);
+                pwm_right_point_turn(70);
+                delay(400);
+                pwmGo(speed);
+                delay(700);
             }
+
+            pthread_mutex_unlock(&motor_mutex);
         }
     }
 }
