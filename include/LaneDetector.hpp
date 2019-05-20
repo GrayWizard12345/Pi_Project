@@ -60,10 +60,12 @@ class LaneDetector {
 private:
     double img_size;
     double img_center;
+
     bool left_flag = false;  // Tells us if there's left boundary of lane detected
     bool right_flag = false;  // Tells us if there's right boundary of lane detected
 
 public:
+
     double right_m;  // y = m*x + b
     double left_m;  //
     cv::Point right_b;  // Members of both line equations of the lane boundaries:

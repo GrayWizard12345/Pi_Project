@@ -27,6 +27,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <wiringPi.h>
 #include "../include/LaneDetector.hpp"
 #include "../include/config_reader.h"
+
 using namespace cv;
 using namespace std;
 // IMAGE BLURRING
@@ -53,7 +54,7 @@ cv::Mat LaneDetector::deNoise(cv::Mat inputImage) {
 cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
 
     cv::Mat output;
-    if(stoi(vars["COLOR_DETECTION"])) {
+    if (stoi(vars["COLOR_DETECTION"])) {
         int H, S, V, H2, S2, V2;
         H = stoi(vars["LANE_DETECTOR_SCALAR_H"]);
         S = stoi(vars["LANE_DETECTOR_SCALAR_S"]);
@@ -69,8 +70,7 @@ cv::Mat LaneDetector::edgeDetector(cv::Mat img_noise) {
 //    cv::dilate(output, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size( 3, 3)));
 //    cv::erode(output, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size( 9, 9)));
 
-    } else
-    {
+    } else {
         cv::cvtColor(img_noise, output, cv::COLOR_BGR2GRAY);
 //        cv::dilate(output, output, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3)));
 //        imshow("deliate", output);
@@ -153,6 +153,9 @@ std::vector<std::vector<cv::Vec4i> > LaneDetector::lineSeparation(std::vector<cv
         }
     }
 
+    left_flag = false;
+    right_flag = false;
+
     // Split the lines into right and left lines
     img_center = static_cast<double>((img_edges.cols / 2));
     while (j < selected_lines.size()) {
@@ -205,7 +208,7 @@ LaneDetector::regression(std::vector<std::vector<cv::Vec4i> > left_right_lines, 
             ini = cv::Point(i[0], i[1]);
             fini = cv::Point(i[2], i[3]);
 
-            line(inputImage, ini, fini, Scalar(250,250,250), 15);
+            line(inputImage, ini, fini, Scalar(250, 250, 250), 15);
             right_pts.push_back(ini);
             right_pts.push_back(fini);
         }
@@ -225,7 +228,7 @@ LaneDetector::regression(std::vector<std::vector<cv::Vec4i> > left_right_lines, 
         for (auto j : left_right_lines[1]) {
             ini2 = cv::Point(j[0], j[1]);
             fini2 = cv::Point(j[2], j[3]);
-            line(inputImage, ini2, fini2, Scalar(250,250,250), 15);
+            line(inputImage, ini2, fini2, Scalar(250, 250, 250), 15);
             left_pts.push_back(ini2);
             left_pts.push_back(fini2);
         }
@@ -277,15 +280,27 @@ double LaneDetector::predictTurn(int &output) {
     double thr_vp = stoi(vars["LANE_DETECTION_CENTER_INTERVAL"]);
 
     // The vanishing point is the point where both lane boundary lines intersect
-    vanish_x = static_cast<double>(((right_m*right_b.x) - (left_m*left_b.x) - right_b.y + left_b.y) / (right_m - left_m));
+    vanish_x = static_cast<double>(((right_m * right_b.x) - (left_m * left_b.x) - right_b.y + left_b.y) /
+                                   (right_m - left_m));
 
     // The vanishing points location determines where is the road turning
     if (vanish_x < (img_center - thr_vp))
         output = LEFT;
-    else if (vanish_x > (img_center + thr_vp))
+    else if (vanish_x >= (img_center + thr_vp))
         output = RIGHT;
     else if (vanish_x >= (img_center - thr_vp) && vanish_x <= (img_center + thr_vp))
         output = STRAIGHT;
+
+    if (output == RIGHT && !left_flag) {
+        output = LEFT;
+        vanish_x = 1 - vanish_x;
+    }else if (output == LEFT && !right_flag) {
+        output = RIGHT;
+        vanish_x = 1 - vanish_x;
+    } else if(!left_flag && !right_flag){
+        output = STRAIGHT;
+        vanish_x = 0.5;
+    }
 
     return vanish_x;
 
@@ -317,8 +332,10 @@ Mat LaneDetector::plotLane(cv::Mat inputImage, std::vector<cv::Point> lane, std:
     cv::line(drawing, lane[0], lane[1], cv::Scalar(0, 255, 255), 5, CV_AA);
     cv::line(drawing, lane[2], lane[3], cv::Scalar(0, 255, 255), 5, CV_AA);
 
-    auto vanish_x = static_cast<double>(((right_m*right_b.x) - (left_m*left_b.x) - right_b.y + left_b.y) / (right_m - left_m));
-    line(drawing, Point(vanish_x, inputImage.rows / 2 - 10), Point(vanish_x, drawing.rows / 2 + 10), Scalar(250, 255, 255), 25, CV_AA);
+    auto vanish_x = static_cast<double>(((right_m * right_b.x) - (left_m * left_b.x) - right_b.y + left_b.y) /
+                                        (right_m - left_m));
+    line(drawing, Point(vanish_x, inputImage.rows / 2 - 10), Point(vanish_x, drawing.rows / 2 + 10),
+         Scalar(250, 255, 255), 25, CV_AA);
 
     // Plot the turn message
 //    resize(inputImage, inputImage, Size(), 0.6, 0.6);
@@ -331,7 +348,7 @@ Mat LaneDetector::plotLane(cv::Mat inputImage, std::vector<cv::Point> lane, std:
     return drawing;
 }
 
-void* look_for_cross_walk(void*) {
+void *look_for_cross_walk(void *) {
 
     delay(3000);
     zeros = Mat(width, 60, CV_8UC1, 0.0);
@@ -447,8 +464,7 @@ void* look_for_cross_walk(void*) {
             int x1 = x0 - 200 * lane[0];     // add a vector of length 200
             int y1 = y0 - 200 * lane[1];   // using the unit vector
             line(crosswalk, cv::Point(x0, y0), cv::Point(x1, y1), cv::Scalar(0), 3);
-            if (abs(lane[1] / lane[0]) < 0.4 && counter >= 5)
-            {
+            if (abs(lane[1] / lane[0]) < 0.4 && counter >= 5) {
                 ir_tracers_are_on = 0;
                 int temp = speed;
                 speed = slowSpeed;

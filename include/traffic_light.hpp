@@ -7,6 +7,7 @@
 #include <raspicam/raspicam_cv.h>
 #include <pthread.h>
 #include <csignal>
+#include <string>
 #include "motion.hpp"
 #include "traffic_sign.h"
 

@@ -8,6 +8,9 @@ using namespace std;
 Mat roi;
 pthread_t signThread;
 
+string signAsString[] = {"NO_SIGN", "LEFT_TURN_SIGN", "RIGHT_TURN_SIGN",
+                         "STOP_SIGN", "PEDESTRIAN_SIGN", "PARKING_SIGN"};
+
 //TODO verify the area for false positive
 void *sign_detect(void *) {
 
@@ -15,7 +18,6 @@ void *sign_detect(void *) {
     Sign lastDetectedSign = NO_SIGN;
     CascadeUtil cascadeUtil;
     cascadeUtil.loadAll();
-    printf("sign detection started\n");
 
     while (true) {
         sign_detection_frame = roi;
@@ -29,33 +31,32 @@ void *sign_detect(void *) {
         cascadeUtil.detectPedestrian(cascadeMinRadius, cascadeMaxRadius);
         cascadeUtil.detectStop(cascadeMinRadius, cascadeMaxRadius);
 
+        if (lastDetectedSign == PEDESTRIAN_SIGN) {
+            delay(3000);
+        }
+
         if (cascadeUtil.isStopDetected && lastDetectedSign == STOP_SIGN) {
             signDetected = NO_SIGN;
             delay(1000);
-            printf("detection - 01\n");
             continue;
-        } else if (cascadeUtil.isStopDetected){
+        } else if (cascadeUtil.isStopDetected) {
             signDetected = STOP_SIGN;
-            cv::putText(sign_detection_frame, "Stop", cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
-        }
-        else if (cascadeUtil.isRightTurnDetected){
+        } else if (cascadeUtil.isRightTurnDetected) {
             signDetected = RIGHT_TURN_SIGN;
-            cv::putText(sign_detection_frame, "Right", cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
-        }
-        else if (cascadeUtil.isLeftTurnDetected){
+        } else if (cascadeUtil.isLeftTurnDetected) {
             signDetected = LEFT_TURN_SIGN;
-            cv::putText(sign_detection_frame, "Left", cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
-        }
-        else if (cascadeUtil.isParkingDetected){
+        } else if (cascadeUtil.isParkingDetected) {
             signDetected = PARKING_SIGN;
-            cv::putText(sign_detection_frame, "Parking", cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
-        }
-        else if (cascadeUtil.isPedestrianDetected){
+        } else if (cascadeUtil.isPedestrianDetected) {
             signDetected = PEDESTRIAN_SIGN;
-            cv::putText(sign_detection_frame, "Pedestrian", cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL, 3, cvScalar(0, 255, 0), 1, CV_AA);
-        }
-        else
+        } else
             signDetected = NO_SIGN;
+
+        cv::putText(sign_detection_frame, signAsString[signDetected], cv::Point(50, 90), cv::FONT_HERSHEY_COMPLEX_SMALL,
+                    3, cvScalar(0, 255, 0), 1, CV_AA);
+
+        if (signDetected != NO_SIGN)
+            cout << signAsString[signDetected] << " - sign detected\n";
 
 
         for (auto r: cascadeUtil.stop) {
@@ -79,7 +80,6 @@ void *sign_detect(void *) {
         }
 
         lastDetectedSign = signDetected;
-        printf("detection - 0\n");
     }
 }
 
@@ -99,7 +99,7 @@ void *trafficLightLoop(void *) {
     while (1) {
         roi = trafficSignFrame(rec);
 
-        while (signDetected == STOP_SIGN){
+        while (signDetected == STOP_SIGN) {
             delay(2000);
         }
 
@@ -137,7 +137,7 @@ void *trafficLightLoop(void *) {
             pthread_mutex_unlock(&motor_mutex);
         } else {
             trafficLightStatus = GREEN_LIGHT;
-            printf("\nNo Red light detected => Green Light is ON");
+            printf("\nNo Red light detected => Green Light is ON\n");
         }
 
     }

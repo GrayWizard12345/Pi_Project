@@ -33,7 +33,6 @@ pthread_t ir_thread;
 
 VideoWriter *video;
 
-int obstacle_counter = 0;
 static int turn;
 Status trafficLightStatus = GREEN_LIGHT;
 
@@ -64,16 +63,15 @@ int del;
 bool crosswalk_detected = true;
 
 int obstacle_avoidance_left_turn_delay;
-
+int obstacle_avoidance_right_turn_delay;
 int obstacle_avoidance_go_dalay;
+int obstacle_avoidance_back_delay;
 
 int width;
 
 int height;
 
 cv::Mat red_hue_image;
-
-int obstacle_avoidance_right_turn_delay;
 
 cv::Mat drawing;
 cv::Mat zeros;
@@ -118,15 +116,19 @@ void *motor_loop(void *) {
     double speed_per_turn = (speed - max_turning) / (50 - 100);
 
     int regularSpeed = speed;
+    int motionSpeed = speed;
     while (true) {
 
 //        auto turn_speed = static_cast<int>(speed + (slope - 50) * speed_per_turn);
 
         //region Pedestrian sign handling
-        if (signDetected == PEDESTRIAN_SIGN)
-            speed = slowSpeed;
-        else
-            speed = regularSpeed;
+        if (signDetected == PEDESTRIAN_SIGN) {
+            motionSpeed = slowSpeed;
+            cout << "slow\n";
+        } else {
+            motionSpeed = regularSpeed;
+            cout << "regular\n";
+        }
         //endregion
 
         //region Left/Right turn sign handling
@@ -146,7 +148,7 @@ void *motor_loop(void *) {
         }
         //endregion
 
-        if (signDetected == PARKING_SIGN){
+        if (signDetected == PARKING_SIGN) {
             pthread_mutex_lock(&motor_mutex);
             pwmStop();
             delay(2000);
@@ -160,16 +162,30 @@ void *motor_loop(void *) {
             turn_speed = speed;
 
         if (turn == Turn::STRAIGHT) {
-            speedLeft = speed;
-            speedRight = speed;
+            speedLeft = motionSpeed;
+            speedRight = motionSpeed;
+            delay(100);
         } else if (turn == Turn::LEFT) {
             delay(del);
-            speedRight = speed + 25;
+            speedRight = motionSpeed + 25;
             speedLeft = turn_speed;
         } else if (turn == Turn::RIGHT) {
-            delay(del);
-            speedRight = turn_speed;
-            speedLeft = speed + 25;
+            if (slope <= 0.7) {
+                delay(del);
+                speedRight = turn_speed;
+                speedLeft = motionSpeed + 20;
+                delay(70);
+            } else if (slope <= 0.8) {
+                delay(del);
+                speedRight = turn_speed - 7;
+                speedLeft = motionSpeed + 25;
+                delay(90);
+            } else {
+                delay(del);
+                speedRight = turn_speed - 15;
+                speedLeft = motionSpeed + 30;
+                delay(100);
+            }
         }
 
         if (trafficLightStatus == GREEN_LIGHT) {
@@ -182,8 +198,6 @@ void *motor_loop(void *) {
 
         printf("\nspeed L: %d, speed R: %d, turn: %d , slope: %lf, traffic_light_status:%d\n", speedLeft, speedRight,
                turn, slope, trafficLightStatus);
-
-        delay(100);
 
     }
 }
@@ -227,7 +241,6 @@ void crosswalk_handler(int sigNum) {
 }
 
 int main() {
-
     signal(SIGINT, signalHandler);
     signal(SIGUSR1, left_interupt);
     signal(SIGUSR2, right_interupt);
@@ -246,6 +259,7 @@ int main() {
         return 1;
 
     }
+
     Mat retr;
     cv::Mat img_denoise;
     cv::Mat img_edges;
@@ -279,12 +293,6 @@ int main() {
     //Traffic light thread initializations
     initTrafficLightThread();
 
-//    if (pthread_create(&sign_thread, nullptr, sign_detection, nullptr)) {
-//
-//        fprintf(stderr, "Error creating thread\n");
-//        return 1;
-//    }
-
 
     //Crosswalk detection thread
 //    if (pthread_create(&crosswalk_thread, nullptr, look_for_cross_walk, nullptr)) {
@@ -314,7 +322,7 @@ int main() {
             double vanish_x = laneDetector.predictTurn(turn);
 
             double full = img_mask.cols;
-            slope = vanish_x * 100 / full;
+            slope = vanish_x / full;
 
             laneDetector.plotLane(src, lane, turnAsString[turn] + " " + to_string(slope), "Lane Detection");
 
@@ -355,6 +363,7 @@ void init_vars() {
     obstacle_avoidance_left_turn_delay = stoi(vars["OBSTACLE_AVOIDANCE_LEFT_TURN_DELAY"]);
     obstacle_avoidance_right_turn_delay = stoi(vars["OBSTACLE_AVOIDANCE_RIGHT_TURN_DELAY"]);
     obstacle_avoidance_go_dalay = stoi(vars["OBSTACLE_AVOIDANCE_GO_DELAY"]);
+    obstacle_avoidance_back_delay = stoi(vars["OBSTACLE_AVOIDANCE_BACK_DELAY"]);
     width = stoi(vars["WIDTH"]);
     height = stoi(vars["HEIGHT"]);
     slowSpeed = stoi(vars["SLOW_SPEED"]);
